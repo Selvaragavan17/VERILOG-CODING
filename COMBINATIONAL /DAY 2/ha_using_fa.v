@@ -44,5 +44,9 @@ module full_adder_tb;
   initial begin
     $monitor("Time=%0t A=%b B=%b Cin=%b Sum=%b Carry=%b", $time, a, b, Cin, sum, carry);
   end
+  initial begin
+    $dumpfile("full adder.vcd");
+    $dumpvars(1,full_adder_tb);
+  end
   
 endmodule
