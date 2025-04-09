@@ -23,7 +23,7 @@ wire q;
     en=1;#5;                                                                    
   end                                                                          
   initial begin                                                               
-    $monitor("time=%t en=%b d=%b q=%b",$time,en,d,q);                          
+    $monitor("time=%0t en=%b d=%b q=%b",$time,en,d,q);                          
   end                                                                          
   initial begin                                                               
     $dumpfile("dlatch.vcd");                                                   
