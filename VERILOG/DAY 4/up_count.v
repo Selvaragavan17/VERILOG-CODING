@@ -29,7 +29,7 @@ module up_count_tb();
   
   initial begin
     rst = 1; en = 0; #10;
-    rst = 0; en = 1; #160; 
+    rst = 0; en = 1; #10; 
     en = 0; #20;           
     en = 1; #30;          
     rst = 1; #10;               
