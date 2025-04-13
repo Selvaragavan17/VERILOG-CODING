@@ -20,7 +20,7 @@ module ring_counter_tb;
   
   initial begin
     clk = 0;
-    forever #5clk = ~clk;
+    forever #5 clk = ~clk;
   end
   
   initial begin
