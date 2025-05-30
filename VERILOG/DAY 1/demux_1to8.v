@@ -20,7 +20,6 @@ endmodule
 
 //testbench
 // Code your testbench here
-// or browse Examples
 module demux_1to8_tb;
   reg in;
   reg [2:0]sel;
@@ -36,9 +35,8 @@ module demux_1to8_tb;
     sel=3'b101;#5;
     sel=3'b110;#5;
     sel=3'b111;#5;
-    
-
   end
+  
   initial begin
     $dumpfile("demux_1to8.vcd");
     $dumpvars(1,demux_1to8_tb);
