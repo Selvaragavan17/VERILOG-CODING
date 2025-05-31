@@ -7,7 +7,7 @@ module johnson_counter(
     if(rst)
       count <= 4'b1010;
     else
-      count <= {~count[3],count[3:1]};
+      count <= {~count[0],count[3:1]};
   end
 endmodule
 
