@@ -14,7 +14,6 @@ module mux_4to1(
      end
 endmodule
 
-
 //testbench
 module mux_4to1_tb;
   reg [3:0]in;
