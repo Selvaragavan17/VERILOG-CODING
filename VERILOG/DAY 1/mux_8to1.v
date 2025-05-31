@@ -13,7 +13,6 @@ module mux_8to1(
       8'b101:out=in[5];
       8'b110:out=in[6];
       8'b111:out=in[7];
-
       default:out=1'b0;
       endcase
      end
