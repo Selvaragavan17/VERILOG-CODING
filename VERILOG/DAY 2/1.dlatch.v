@@ -5,8 +5,6 @@ module dlatch(
  always@(*)begin
    if(en)
      q=d;
-   else
-     q=0;
   end
 endmodule
 //testbench
