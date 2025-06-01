@@ -28,7 +28,7 @@ module decoder_3to8_tb;
   reg EN;
   wire D0,D1,D2,D3,D4,D5,D6,D7;
 
-  decoder_3to8 uut (A0,A1,A2,en,D0,D1,D2,D3,D4,D5,D6,D7
+  decoder_3to8 uut (A0,A1,A2,EN,D0,D1,D2,D3,D4,D5,D6,D7
   );
 
   initial begin
