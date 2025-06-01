@@ -12,7 +12,7 @@ module fsm_mealy_overlapp(
   reg [1:0]st,nst;
   
   always@(posedge clk)begin
-    if (rst)
+    if (rst==0)
       st<=a;
     else
       st<=nst;
