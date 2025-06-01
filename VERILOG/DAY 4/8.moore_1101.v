@@ -52,15 +52,7 @@ module moore(clk,rst,in,out);
       default:next_state<=a;
     endcase
   end
-  always@(*)begin
-    case(state)
-      a:out=0;
-      b:out=0;
-      c:out=0;
-      d:out=0;
-      e:out=1;
-    endcase
-  end
+  assign out=(state==e)&&(in==1);
 endmodule
 
 //testbench code
