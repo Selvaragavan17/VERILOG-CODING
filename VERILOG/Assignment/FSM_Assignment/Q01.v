@@ -11,7 +11,7 @@ module mealy_overlapp(
   reg [1:0]st,nst;
   
   always@(posedge clk)begin
-    if (rst==0)
+    if (rst)
       st<=a;
     else
       st<=nst;
