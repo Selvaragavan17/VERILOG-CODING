@@ -52,15 +52,8 @@ module moore_o(clk,rst,in,out);
       default:next_state<=a;
     endcase
   end
-  always@(*)begin
-    case(state)
-      a:out=0;
-      b:out=0;
-      c:out=0;
-      d:out=0;
-      e:out=1;
-    endcase
-  end
+  assign out=(state==e)&&(in==1);
+
 endmodule
 
 //testbench code
@@ -74,17 +67,17 @@ module moore_o_tb();
   end
   initial begin
     rst=1'b1;in=1'b1;#10;
-    rst=1'b1;in=1'b1;#10;
+    rst=1'b0;in=1'b1;#10;
+    rst=1'b0;in=1'b1;#10;
     rst=1'b0;in=1'b0;#10;
     rst=1'b0;in=1'b1;#10;
-    rst=1'b1;in=1'b0;#10;
     rst=1'b0;in=1'b1;#10; 
     rst=1'b0;in=1'b1;#10;
-    rst=1'b1;in=1'b1;#10;
+    rst=1'b0;in=1'b0;#10;
     rst=1'b0;in=1'b1;#10;
     rst=1'b0;in=1'b1;#10;
     rst=1'b0;in=1'b1;#10;
-    rst=1'b1;in=1'b1;#10;
+    rst=1'b0;in=1'b0;#10;
     #1;$finish;
   end
   initial begin
