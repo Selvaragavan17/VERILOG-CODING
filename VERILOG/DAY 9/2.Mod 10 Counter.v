@@ -7,7 +7,7 @@ module mod_10_counter(
   always@(posedge clk or posedge rst)begin
     if(rst)
       count<=4'b0000;
-    else if(count==4'b1010)
+    else if(count==4'b1001)
       count<=4'b000;
     else 
       count<=count+1;
