@@ -18,8 +18,7 @@ module nor_gate_cmos_tb;
     nor_gate_cmos uut (.a(a),.b(b),.y(y));
 
     initial begin
-        $display("Time\t a b | y");
-        $monitor("%0t\t %b %b | %b", $time, a, b, y);
+        $monitor("Time=%0t|A=%b|B=%b|Y=%b", $time, a, b, y);
         a = 0; b = 0; #10;
         a = 0; b = 1; #10;
         a = 1; b = 0; #10;
