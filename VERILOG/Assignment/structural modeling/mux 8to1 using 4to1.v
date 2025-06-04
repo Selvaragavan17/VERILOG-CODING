@@ -27,7 +27,7 @@ endmodule
 //testbench code
 `timescale 1ns / 1ps
 
-module tb_mux8to1;
+module mux8to1_tb;
 
     reg s2, s1, s0;
     reg x0, x1, x2, x3, x4, x5, x6, x7;
@@ -41,7 +41,6 @@ module tb_mux8to1;
     );
   initial begin
       {x0,x1,x2,x3,x4,x5,x6,x7} = 8'b10101011; 
-
       $monitor("S2=%b|S1=%b|S0=%b|Y=%b", s2, s1, s0, y);
         s2 = 0; s1 = 0; s0 = 0; #10; 
         s2 = 0; s1 = 0; s0 = 1; #10; 
@@ -56,7 +55,7 @@ module tb_mux8to1;
   
   initial begin
     $dumpfile("mux8to1.vcd");
-    $dumpvars;
+    $dumpvars(1,mux8to1_tb);
   end
   
 
