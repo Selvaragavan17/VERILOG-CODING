@@ -27,7 +27,7 @@ module shift_tb;
   initial begin
     $dumpfile("shift.vcd");
     $dumpvars(1, shift_tb);
-    $monitor("Time = %0t | a = %b | shift = %0d | result = %b", $time, a, sh, result);
+    $monitor("Time=%0t|a=%b|shift=%0d|result=%b", $time, a, sh, result);
   end
 
   initial begin
