@@ -5,7 +5,7 @@ module barrelshift(
   input [1:0]shift,
   output [3:0]out);
   
-  assign out=din?(1>>shift):(1<<shift);
+  assign out=din?(in>>shift):(in<<shift);
   
 endmodule
 
