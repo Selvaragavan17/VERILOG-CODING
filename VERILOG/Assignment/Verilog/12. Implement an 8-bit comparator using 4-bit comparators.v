@@ -88,3 +88,16 @@ module comp_8b_tb;
     $finish;
   end
 endmodule
+
+//output
+
+VCD info: dumpfile comp_8b.vcd opened for output.
+Time=0|a=00010010|b=00010010|greater=0|lesser=0| equal=1
+Time=10|a=10100000|b=10010000|greater=1|lesser=0| equal=0
+Time=20|a=01101100|b=10000000|greater=0|lesser=1| equal=0
+Time=30|a=11000000|b=11000001|greater=0|lesser=1| equal=0
+Time=40|a=11000010|b=11000001|greater=1|lesser=0| equal=0
+Time=50|a=11111111|b=00000000|greater=1|lesser=0| equal=0
+Time=60|a=00000000|b=11111111|greater=0|lesser=1| equal=0
+Time=70|a=10000000|b=10000000|greater=0|lesser=0| equal=1
+testbench.sv:23: $finish called at 80 (1s)
