@@ -50,20 +50,12 @@ module serialadder_tb;
   wire [3:0]sum;
   wire done;
   
-  serialadder uut (
-    .clk(clk),
-    .rst(rst),
-    .load(load),
-    .a(a),
-    .b(b),
-    .sum(sum),
-    .done(done)
-  );
+  serialadder uut (.clk(clk),.rst(rst),.load(load),.a(a),.b(b),.sum(sum),.done(done));
   
   initial begin
     $dumpfile("serialadder.vcd");
     $dumpvars(1,serialadder_tb);
-    $monitor("Time=%0t|Load=%b|A=%b|B=%b|Sum=%b|Done=%b",$time,load,a,b,sum,done);
+    $monitor("Time=%0t|Load=%b|RST=%b|A=%b|B=%b|Sum=%b|Done=%b",$time,load,rst,a,b,sum,done);
   end
   
   initial begin
