@@ -10,15 +10,15 @@ module clad(
   assign p=a^b;
   assign g=a&b;
   
-  assign sum[0]=p[0]^c0;
-  assign sum[1]=p[1]^c1;
-  assign sum[2]=p[2]^c2;
-  assign sum[3]=p[3]^c3;
-  
   assign c1=g[0]|(p[0]&c0);
   assign c2=g[1]|(p[1]&c1);
   assign c3=g[2]|(p[2]&c2);
   assign c4=g[3]|(p[3]&c3);
+
+  assign sum[0]=p[0]^c0;
+  assign sum[1]=p[1]^c1;
+  assign sum[2]=p[2]^c2;
+  assign sum[3]=p[3]^c3;
   
 endmodule
 
