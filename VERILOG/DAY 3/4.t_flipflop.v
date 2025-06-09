@@ -3,10 +3,12 @@ module t_flipflop(
   input clk,rst,t,
   output reg q);
   always@(posedge clk)begin
-    if(rst==0)
-      q<=~t;
+    if(rst)
+      q<=0
+    else if(t)
+      q<=~q;
     else
-      q<=0;
+      q<=q;
   end
 endmodule
 
