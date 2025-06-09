@@ -28,14 +28,7 @@ module moore_101(
     endcase
   end
   
-  always@(*)begin
-    case(st)
-      s0:out=0;
-      s1:out=0;
-      s2:out=0;
-      s3:out=1;
-    endcase
-  end
+assign out = (st == s3) ? 1'b1 : 1'b0; 
 endmodule
 
 //testbench code
