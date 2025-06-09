@@ -32,13 +32,15 @@ module t_flipflop_tb;
   end
   
   initial begin
-    rst=0;
-    t=1;#10;
-    t=1;#10;
-    t=0;#10;
-    rst=1;#10;
-    t=1;#10;
-    t=0;#10;
-    rst=1;
+   rst = 1;       
+  t = 0;
+  #10;
+  rst = 0;      
+  t = 1; #10;
+  t = 1; #10;
+  t = 0; #10;
+  rst = 1; #10;  
+  rst = 0; t = 1; #10;
+  t = 0; #10;
     $finish;
   end
