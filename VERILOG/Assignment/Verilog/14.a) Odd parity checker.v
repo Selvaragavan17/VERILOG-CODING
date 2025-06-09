@@ -2,7 +2,7 @@
 module odd_p_c(
 input a,b,c,p,
 output out);
-assign out=~(a^b^c^p);
+assign out=(a^b^c^p);
 endmodule
 
 //testbencch codee
