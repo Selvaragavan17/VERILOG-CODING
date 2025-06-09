@@ -1,5 +1,5 @@
 //design code
-module mealy_101(
+module moore_101(
   input clk,
   input rst,
   input in,
@@ -39,13 +39,13 @@ module mealy_101(
 endmodule
 
 //testbench code
-module mealy_101_tb;
+module moore_101_tb;
   reg clk;
   reg rst;
   reg in;
   wire out;
   
-  mealy_101 uut(clk,rst,in,out);
+  moore_101 uut(clk,rst,in,out);
   
   initial begin
     clk=0;
@@ -54,8 +54,8 @@ module mealy_101_tb;
   
   initial begin
     $monitor("Time=%0t|clk=%b|rst=%b|in=%b|out=%b",$time,clk,rst,in,out);
-    $dumpfile("mealy_101.vcd");
-    $dumpvars(1,mealy_101_tb);
+    $dumpfile("moore_101.vcd");
+    $dumpvars(1,moore_101_tb);
   end
   
   initial begin
