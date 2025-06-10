@@ -4,17 +4,19 @@ module freq_div4(
   input rst,
   output reg out);
   
-  reg[1:0]count;
+  reg count;
   always@(posedge clk)begin
     if(rst)begin
-      count<=2'b00;
+      count<=0;
       out<=0;
     end
     else begin
       count<=count+1;
-      if(count==2'b11)
+      if(count==1)
         out<=~out;
+      
     end
+//     $display("display count=%0d",count);
   end
 endmodule
 
@@ -51,14 +53,14 @@ Time=5|clk=1|rst=1|out=0
 Time=10|clk=0|rst=0|out=0
 Time=15|clk=1|rst=0|out=0
 Time=20|clk=0|rst=0|out=0
-Time=25|clk=1|rst=0|out=0
-Time=30|clk=0|rst=0|out=0
-Time=35|clk=1|rst=0|out=0
-Time=40|clk=0|rst=0|out=0
-Time=45|clk=1|rst=0|out=1
-Time=50|clk=0|rst=0|out=1
-Time=55|clk=1|rst=0|out=1
-Time=60|clk=0|rst=0|out=1
+Time=25|clk=1|rst=0|out=1
+Time=30|clk=0|rst=0|out=1
+Time=35|clk=1|rst=0|out=1
+Time=40|clk=0|rst=0|out=1
+Time=45|clk=1|rst=0|out=0
+Time=50|clk=0|rst=0|out=0
+Time=55|clk=1|rst=0|out=0
+Time=60|clk=0|rst=0|out=0
 Time=65|clk=1|rst=0|out=1
 Time=70|clk=0|rst=0|out=1
 Time=75|clk=1|rst=0|out=1
@@ -67,6 +69,6 @@ Time=85|clk=1|rst=0|out=0
 Time=90|clk=0|rst=0|out=0
 Time=95|clk=1|rst=0|out=0
 Time=100|clk=0|rst=0|out=0
-Time=105|clk=1|rst=0|out=0
+Time=105|clk=1|rst=0|out=1
 testbench.sv:24: $finish called at 110 (1s)
-Time=110|clk=0|rst=0|out=0
+Time=110|clk=0|rst=0|out=1
