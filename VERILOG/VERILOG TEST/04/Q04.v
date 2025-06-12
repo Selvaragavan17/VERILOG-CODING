@@ -4,14 +4,10 @@
   then continue displaying the results. Note: |B|C means (not B) and (not c) 
 
 //design code
-`timescale 1ns / 1ps
-
 module logic_expression(
   input A, B, C, D, E,
   output Y
 );
-
-  // Internal wires
   wire nB, nC, nD;
   wire and1, and2, and3, and4;
   wire temp1, temp2;
