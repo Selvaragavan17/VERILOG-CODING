@@ -6,7 +6,7 @@ module random_gen;
   initial begin
     for (i = 0; i < 10; i = i + 1) begin
       rand_val = ($urandom%201)-100;
-      $display("Random number %0d: %0d", i, rand_val);
+      $display( i, rand_val);
       #10;
     end
     $finish;
