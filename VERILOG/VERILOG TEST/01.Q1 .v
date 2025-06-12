@@ -1,6 +1,5 @@
 1 22 333 4444 55555 4444 333 22 1 display this sequence in diamond shape ?
   /////code//////
-`timescale 1ns / 1ps
 
 module diamond_pattern_tb;
   integer i, j, k;
