@@ -6,7 +6,7 @@ module clk_divider_Hz (
     input reset,
     output reg clk_1Hz);
 
-    reg [17:0] counter;
+    reg [18:0] counter;
 
     always @(posedge clk_MHz or posedge reset) begin
         if (reset) begin
