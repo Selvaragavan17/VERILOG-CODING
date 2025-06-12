@@ -1,15 +1,14 @@
 5.Generate a 100Hz clock from a 50MHZ clock in verilog?
 
 //design code
-module clk_divider_100Hz (
-    input clk_50MHz,
+module clk_divider_Hz (
+    input clk_MHz,
     input reset,
-    output reg clk_100Hz
-);
+    output reg clk_1Hz);
 
     reg [17:0] counter;
 
-    always @(posedge clk_50MHz or posedge reset) begin
+    always @(posedge clk_MHz or posedge reset) begin
         if (reset) begin
             counter <= 0;
             clk_100Hz <= 0;
@@ -17,7 +16,7 @@ module clk_divider_100Hz (
         else begin
             if (counter == 249999) begin 
                 counter <= 0;
-                clk_100Hz <= ~clk_100Hz; 
+                clk_Hz <= ~clk_Hz; 
             end
             else begin
                 counter <= counter + 1;
