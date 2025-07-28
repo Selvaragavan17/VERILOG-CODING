@@ -20,6 +20,8 @@ module piso(
 endmodule
 
 
+
+//design code another method 
 module piso_register (
   input  wire       clk,     // Clock
   input  wire       rst,     // Synchronous active-high reset
@@ -27,9 +29,6 @@ module piso_register (
   input  wire [3:0] D,       // 4-bit parallel input
   output reg        Q        // Serial output (MSB first)
 );
-
-    
-//design code another method 
   reg [3:0] shift_reg;       // Internal register
 
   always @(posedge clk) begin
