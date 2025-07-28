@@ -3,7 +3,7 @@ module tlatch(
   input en,t,
    output reg q);
  always@(*)begin
-   if(en)
+   if(en)                    //Q = T ? ~Q : Q;
      q=~t;
   end
 endmodule
