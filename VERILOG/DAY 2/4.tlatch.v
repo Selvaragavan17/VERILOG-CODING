@@ -2,9 +2,13 @@
 module tlatch(
   input en,t,
    output reg q);
- always@(*)begin
-   if(en)                    //Q = T ? ~Q : Q;
-     q=~t;
+  always @ (*) begin
+    if (en) begin
+      if (t)
+        q = ~q;         // Toggle
+      else
+        q = q;          // Hold state
+    end
   end
 endmodule
 
