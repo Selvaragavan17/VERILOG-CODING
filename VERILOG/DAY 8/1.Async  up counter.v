@@ -3,7 +3,7 @@ module async_up_counter(
   input clk,rst,
   output reg [3:0]count);
   
-  always@(posedge clk or negedge rst)begin
+  always@(posedge clk or posedge rst)begin
     if(rst)
       count<=4'b0000;
     else
