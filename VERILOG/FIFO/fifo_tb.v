@@ -39,13 +39,13 @@ module tb_fifo_sync;
   task fifo_write(input [DATA_WIDTH-1:0] din);
     begin
       @(posedge clk);
-      cs <= 1;
-      wr_en <= 1;
-      rd_en <= 0;
-      data_in <= din;
+      cs = 1;
+      wr_en = 1;
+      rd_en = 0;
+      data_in = din;
       $display($time, " write_data data_in = %0d", data_in);
       @(posedge clk);
-      wr_en <= 0;
+      wr_en = 0;
     end
   endtask
 
@@ -53,12 +53,12 @@ module tb_fifo_sync;
   task fifo_read;
     begin
       @(posedge clk);
-      cs <= 1;
-      wr_en <= 0;
-      rd_en <= 1;
+      cs = 1;
+      wr_en = 0;
+      rd_en = 1;
       @(posedge clk);
        $display($time, " read_data data_out = %0d", data_out);
-      rd_en <= 0;
+      rd_en = 0;
     end
   endtask
 
