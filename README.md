@@ -1,1 +1,38 @@
 VERILOG CODING
+`timescale 1ns/1ps
+module tb_mux4x1;
+
+    reg  [3:0] d;
+    reg  [1:0] sel;
+    wire y;
+
+    // Instantiate DUT (Device Under Test)
+    mux4x1 uut (
+        .d(d),
+        .sel(sel),
+        .y(y)
+    );
+
+    initial begin
+        $dumpfile("mux4x1_tb.vcd"); // for waveform if using GTKWave
+        $dumpvars(0, tb_mux4x1);
+
+        // Test all select cases
+        d = 4'b1010;  // d[3]=1, d[2]=0, d[1]=1, d[0]=0
+
+        sel = 2'b00; #10;  // expect y = d[0] = 0
+        sel = 2'b01; #10;  // expect y = d[1] = 1
+        sel = 2'b10; #10;  // expect y = d[2] = 0
+        sel = 2'b11; #10;  // expect y = d[3] = 1
+
+        // Try another data pattern
+        d = 4'b1101;  
+
+        sel = 2'b00; #10;  // expect y = 1
+        sel = 2'b01; #10;  // expect y = 0
+        sel = 2'b10; #10;  // expect y = 1
+        sel = 2'b11; #10;  // expect y = 1
+
+        $finish;
+    end
+endmodule
