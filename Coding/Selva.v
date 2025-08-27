@@ -1,36 +1,45 @@
 `timescale 1ns/1ps
-module tb_mux4x1;
 
-    reg  [3:0] d;
-    reg  [1:0] sel;
-    wire y;
+module half_adder (
+input  a, b,
+output reg sum, carry);
 
+always @(*) begin
+sum   = a ^ b;  // XOR operation
+carry = a & b;  // AND operation
+end
 
-    mux4x1 uut (
-        .d(d),
-        .sel(sel),
-        .y(y)
-    );
+endmodule
 
-    initial begin
-        $dumpfile("mux4x1_tb.vcd"); // for waveform if using GTKWave
-        $dumpvars(0, tb_mux4x1);
+`timescale 1ns/1ps
 
-        d = 4'b1010;  // d[3]=1, d[2]=0, d[1]=1, d[0]=0
+module tb_half_adder;
 
-        sel = 2'b00; #10;  
-        sel = 2'b01; #10; 
-        sel = 2'b10; #10;  
-        sel = 2'b11; #10;  
+reg a, b;
+wire sum, carry;
 
-       
-        d = 4'b1101;  
+ 
+half_adder uut (
+.a(a), .b(b),
+.sum(sum), .carry(carry));
 
-        sel = 2'b00; #10;  // expect y = 1
-        sel = 2'b01; #10;  // expect y = 0
-        sel = 2'b10; #10;  // expect y = 1
-        sel = 2'b11; #10;  // expect y = 1
+initial begin
+$dumpfile("tb_half_adder.vcd");
+$dumpvars(0, tb_half_adder);
+
+a=0; b=0; #10;
+$display("a=%b b=%b => sum=%b carry=%b (Expected: 0 0)", a, b, sum, carry);
+
+a=0; b=1; #10;
+$display("a=%b b=%b => sum=%b carry=%b (Expected: 1 0)", a, b, sum, carry);
+
+a=1; b=0; #10;
+$display("a=%b b=%b => sum=%b carry=%b (Expected: 1 0)", a, b, sum, carry);
+
+a=1; b=1; #10;
+$display("a=%b b=%b => sum=%b carry=%b (Expected: 0 1)", a, b, sum, carry);
 
         $finish;
     end
+
 endmodule
