@@ -1,90 +1,315 @@
-| **Aspect**                      | **Function**                                                          | **Task**                                                             |
-| ------------------------------- | --------------------------------------------------------------------- | -------------------------------------------------------------------- |
-| **Return Value**                | Must return a single value (using function name).                     | Cannot return directly, but can pass multiple outputs via arguments. |
-| **Arguments**                   | Only **input** arguments allowed (cannot use output or inout).        | Can have **input, output, and inout** arguments.                     |
-| **Timing Control (#, @, wait)** | **Not allowed** – functions must execute in **zero simulation time**. | **Allowed** – tasks can contain `#`, `@`, `wait`, etc.               |
-| **Usage**                       | Used for **combinational logic, simple calculations**.                | Used for **complex operations, testbenches, sequential behavior**.   |
-| **Return Type**                 | Must be declared (e.g., `integer`, `reg`, `bit`).                     | No return type. Values passed via output or inout.                   |
-| **Execution Time**              | Zero time (purely combinational).                                     | Can consume simulation time.                                         |
-| **Example Use Case**            | Arithmetic calculation, priority encoder logic.                       | Stimulus generation, data transactions, handshake protocols.         |
+`timescale 1ns/1ps
 
-  module tb;
-  reg a, b;
+module mux8x1 (
+input  [7:0] d,    
+input  [2:0] sel,   
+output reg y );
 
-  initial begin
-    $dumpfile("wave.vcd");  
-    $dumpvars(0, tb);
+always @(*) begin
+case (sel)
+3'b000: y = d[0];
+3'b001: y = d[1];
+3'b010: y = d[2];
+3'b011: y = d[3];
+3'b100: y = d[4];
+3'b101: y = d[5];
+3'b110: y = d[6];
+3'b111: y = d[7];
+default: y = 1'b0;
+endcase
+end
 
-    a = 0; b = 0;
-    $display("Time=%0t, a=%b, b=%b", $time, a, b);
-    #5 a = 1;
-    #5 b = 1;
-    $monitor("At Time=%0t, a=%b, b=%b", $time, a, b);
-    #10 $finish;
-  end
+endmodule
+
+`timescale 1ns/1ps
+
+module tb_mux8x1;
+
+    reg  [7:0] d;
+    reg  [2:0] sel;
+    wire y;
+
+
+mux8x1 dut (.d(d),.sel(sel),.y(y));
+
+initial begin
+$dumpfile("tb_mux8x1.vcd");
+$dumpvars(0, tb_mux8x1);
+
+d = 8'b10101010;
+sel = 3'b000;
+
+#10 sel = 3'b000;  
+#10 sel = 3'b001;  
+#10 sel = 3'b010;  
+#10 sel = 3'b011;  
+#10 sel = 3'b100;  
+#10 sel = 3'b101; 
+#10 sel = 3'b110; 
+#10 sel = 3'b111;  
+
+#20 $finish;
+end
+
+initial begin
+$monitor("Time=%0t | sel=%b | y=%b", $time, sel, y);
+end
+
+endmodule
+----------------------------------------------------------------------------------------------------
+// 16x1 MUX using conditional operator
+module mux16x1 (
+    input  [15:0] d,
+    input  [3:0]  sel,
+    output y);
+
+assign y = (sel == 4'd0)  ? d[0]  :
+           (sel == 4'd1)  ? d[1]  :
+           (sel == 4'd2)  ? d[2]  :
+           (sel == 4'd3)  ? d[3]  :
+           (sel == 4'd4)  ? d[4]  :
+           (sel == 4'd5)  ? d[5]  :
+           (sel == 4'd6)  ? d[6]  :
+           (sel == 4'd7)  ? d[7]  :
+           (sel == 4'd8)  ? d[8]  :
+           (sel == 4'd9)  ? d[9]  :
+           (sel == 4'd10) ? d[10] :
+           (sel == 4'd11) ? d[11] :
+           (sel == 4'd12) ? d[12] :
+           (sel == 4'd13) ? d[13] :
+           (sel == 4'd14) ? d[14] :
+                            0;
+endmodule
+
+`timescale 1ns/1ps
+module tb_mux16x1;
+
+reg [15:0] d;
+reg [3:0]  sel;
+wire y;
+
+mux16x1 uut (.d(d), .sel(sel), .y(y));
+
+initial begin
+$dumpfile("mux16x1_tb.vcd");
+$dumpvars(0, tb_mux16x1);
+
+d = 16'b1010_1100_1111_0001;
+
+sel = 4'd0;  #10;
+sel = 4'd1;  #10;
+sel = 4'd5;  #10;
+sel = 4'd10; #10;
+sel = 4'd15; #10;
+
+$finish;
+end
+
+initial begin
+$monitor("Time=%0t | sel=%d | y=%b", $time, sel, y);
+end
+
+endmodule
+-------------------------------------------------------------------------------------------------------
+`timescale 1ns/1ps
+
+module demux1x2 (
+input din,        
+input sel,      
+output reg y0,    
+output reg y1);
+
+always @(*) begin
+case (sel)
+1'b0: begin
+y0 = din;
+y1 = 0;
+end
+1'b1: begin
+y0 = 0;
+y1 = din;
+end
+endcase
+end
 endmodule
 
 
+`timescale 1ns/1ps
 
-  | **System Task**   | **Purpose**                     |
-| ----------------- | ------------------------------- |
-| `$display`        | Print message once              |
-| `$monitor`        | Continuously monitor signals    |
-| `$strobe`         | Print values at end of timestep |
-| `$time/$realtime` | Get current simulation time     |
-| `$finish`         | End simulation                  |
-| `$stop`           | Pause simulation                |
-| `$dumpfile`       | Create waveform file            |
-| `$dumpvars`       | Dump signal values              |
-| `$random`         | Generate random numbers         |
-| `$fopen/$fclose`  | Open/close file                 |
-| `$fdisplay`       | Print into file                 |
+module tb_demux1x2;
+
+reg din, sel;
+wire y0, y1;
 
 
-  | Directive            | Purpose                              |
-| -------------------- | ------------------------------------ |
-| \`define             | Define macro/constant                |
-| \`include            | Include external file                |
-| \`timescale          | Set simulation time unit & precision |
-| `ifdef / `ifndef     | Conditional compilation              |
-| \`undef              | Undefine a macro                     |
-| \`default\_nettype   | Control implicit nets                |
-| \`celldefine         | Mark module as a cell                |
-| \`unconnected\_drive | Drive unconnected inputs             |
-| \`resetall           | Reset directives                     |
+demux1x2 dut (.din(din),.sel(sel),.y0(y0),.y1(y1));
+
+initial begin
+$monitor("Time=%0t | din=%b sel=%b | y0=%b y1=%b", $time, din, sel, y0, y1);
 
 
-1.Used for Continuous Assignment
-The assign statement is used to drive net data types (like wire) continuously.
- 2. Can Only Drive Nets, Not Variables
-The LHS of an assign must be a net type (wire, tri, etc.), not a reg.
-3.Implements Combinational Logic
-Commonly used to model combinational logic (AND, OR, XOR, etc.).
-Equivalent to logic gates.
-4.Supports Continuous Driving of Expressions
-5.Can Have Delay (Inertial Delay)
-You can specify delay in an assign statement.
-Delay models the propagation delay of combinational logic.
-  6.Multiple Drivers Allowed on wire
-  7.Cannot Be Used Inside always or initial Blocks
-assign is only for continuous assignment, not procedural assignment.
-  module assign_example;
-  reg a, b, sel;
-  wire y1, y2, y3;
+din =0; sel =0; #10;
+din =1; sel =0; #10;
+din =1; sel =1; #10;
+din =0; sel =1; #10;
 
-  // Continuous assignments
-  assign y1 = a & b;            // AND gate
-  assign y2 = a | b;            // OR gate
-  assign y3 = (sel) ? a : b;    // 2:1 MUX
+$finish;
+end
 
-  initial begin
-    a = 0; b = 0; sel = 0;
-    #5 a = 1; b = 1;
-    #5 sel = 1;
-    #5 b = 0;
-  end
+endmodule
+------------------------------------------------------------
+`timescale 1ns/1ps
+
+module demux1x4 (
+input din,       
+input [1:0] sel,    
+output reg y0,    
+output reg y1,     
+output reg y2,     
+output reg y3);
+
+always @(*) begin
+  y0 = 0; y1 = 0; y2 = 0; y3 = 0;
+
+case (sel)
+2'b00:y0=din;
+2'b01:y1=din;
+2'b10:y2=din;
+2'b11:y3=din;
+endcase
+end
+
 endmodule
 
 
+`timescale 1ns/1ps
+
+module tb_demux1x4;
+
+reg din;
+reg [1:0] sel;
+wire y0, y1, y2, y3;
 
 
+demux1x4 dut (
+.din(din),.sel(sel),.y0(y0),.y1(y1),.y2(y2),.y3(y3));
+
+initial begin
+    $monitor("Time=%0t | din=%b sel=%b | y0=%b y1=%b y2=%b y3=%b",
+              $time, din, sel, y0, y1, y2, y3);
+din = 1; sel = 2'b00; #10;
+din = 1; sel = 2'b01; #10;
+din = 1; sel = 2'b10; #10;
+din = 1; sel = 2'b11; #10;
+
+din = 0; sel = 2'b00; #10;
+din = 0; sel = 2'b01; #10;
+din = 0; sel = 2'b10; #10;
+din = 0; sel = 2'b11; #10;
+
+$finish;
+end
+
+endmodule
+------------------------------------------------------------------------------------
+`timescale 1ns/1ps
+module decoder3x8 (
+input [2:0] in,       
+output reg [7:0] out);
+
+always @(*) begin
+case (in)
+3'b000: out = 8'b00000001;
+3'b001: out = 8'b00000010;
+3'b010: out = 8'b00000100;
+3'b011: out = 8'b00001000;
+3'b100: out = 8'b00010000;
+3'b101: out = 8'b00100000;
+3'b110: out = 8'b01000000;
+3'b111: out = 8'b10000000;
+default: out = 8'b00000000; 
+endcase
+end
+endmodule
+
+`timescale 1ns/1ps
+module tb_decoder3x8;
+
+reg [2:0] in;
+wire [7:0] out;
+
+   
+decoder3x8 uut (.in(in),.out(out));
+
+initial begin
+$monitor("Time=%0t | in=%b | out=%b", $time, in, out);
+in = 3'b000; #10;
+in = 3'b001; #10;
+in = 3'b010; #10;
+in = 3'b011; #10;
+in = 3'b100; #10;
+in = 3'b101; #10;
+in = 3'b110; #10;
+in = 3'b111; #10;
+
+$finish;
+end
+endmodule
+-----------------------------------------------------------------------
+`timescale 1ns/1ps
+
+module decoder3x8 (
+    input [2:0] in,      
+    input en,            
+    output reg [7:0] out);
+
+always @(*) begin
+if (en) begin
+case (in)
+3'b000: out = 8'b0000_0001;
+3'b001: out = 8'b0000_0010;
+3'b010: out = 8'b0000_0100;
+3'b011: out = 8'b0000_1000;
+3'b100: out = 8'b0001_0000;
+3'b101: out = 8'b0010_0000;
+3'b110: out = 8'b0100_0000;
+3'b111: out = 8'b1000_0000;
+default: out = 8'b0000_0000;
+endcase
+end else begin
+out = 8'b0000_0000; 
+end
+    end
+
+endmodule
+`timescale 1ns/1ps
+
+module tb_decoder3x8;
+
+reg [2:0] in;
+reg en;
+wire [7:0] out;
+
+
+decoder3x8 uut (.in(in),.en(en),.out(out));
+
+initial begin
+$monitor("Time=%0t | en=%b in=%b -> out=%b", $time, en, in, out);
+en = 0; in = 3'b000; #10;
+in = 3'b111; #10;
+
+en = 1; 
+in = 3'b000; #10;
+in = 3'b001; #10;
+in = 3'b010; #10;
+in = 3'b011; #10;
+in = 3'b100; #10;
+in = 3'b101; #10;
+in = 3'b110; #10;
+in = 3'b111; #10;
+
+$finish;
+end
+
+endmodule
+-----------------------------------------------------------------------
