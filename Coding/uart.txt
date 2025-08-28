@@ -1,0 +1,322 @@
+Introduction to UART (PL011)
+The UART (Universal Asynchronous Receiver/Transmitter) is a communication peripheral used in ARM-based System-on-Chip (SoC) designs. It is developed and licensed by ARM and follows the AMBA (Advanced Microcontroller Bus Architecture) specification, making it easy to integrate into ARM-based systems.
+This UART connects to the APB (Advanced Peripheral Bus), which is part of the AMBA system. It also includes support for IrDA SIR (Infrared Data Association Serial Infrared) protocol – allowing infrared data communication.
+________________________________________
+✅ Key Features of the UART
+•	AMBA-compliant: Works well with other components in the AMBA-based system (Rev 2.0 and above).
+•	Supports UART and IrDA SIR modes: Can send and receive data either through normal serial wires or through infrared.
+•	FIFO Buffers:
+o	32-byte transmit buffer (32x8)
+o	32-byte receive buffer (32x12)
+o	These reduce the number of times the CPU is interrupted.
+o	FIFO can also be disabled for single-byte data.
+•	Programmable Baud Rate Generator:
+o	Allows setting the speed of data transmission.
+o	Divides the clock with fine granularity to support various data rates.
+o	Supports fractional values, so any clock (e.g., 3.6864 MHz) can be used.
+•	Standard Serial Communication Bits:
+o	Adds start bit, stop bit, and parity bit automatically during data transmission and removes them during reception.
+•	Interrupt Management:
+o	You can individually enable/disable interrupts for different events like:
+	Transmit FIFO
+	Receive FIFO
+	Receive timeout
+	Modem status
+	Error conditions
+•	DMA (Direct Memory Access) support for efficient data transfer.
+•	Special Features:
+o	Detects false start bits (incorrect data starts)
+o	Can generate and detect line breaks (used for special control)
+o	Supports hardware modem control: CTS, RTS, DSR, DCD, DTR, and RI.
+o	Hardware flow control can be programmed (automatically manages data flow to prevent overflow)
+________________________________________
+🔧 Programmable Settings
+You can configure:
+•	Baud rate: Choose how fast data is transmitted.
+•	Number of data bits: 5, 6, 7, or 8 bits
+•	Number of stop bits: 1 or 2
+•	Parity mode: Even, odd, stick (fixed), or none
+•	FIFO depth: Use full 32-depth or disable it for 1-byte operation
+•	Trigger levels for FIFO: Choose when an interrupt is generated (like at 4 bytes full)
+•	Clock frequency settings: Supports low-power IrDA mode
+•	Hardware flow control: Optional control using modem signals
+________________________________________
+🔄 Difference from Older UART (16C650)
+This UART is not backward-compatible with the older PL010 or 16C650 UARTs. Here are the differences:
+•	Different FIFO trigger levels
+•	Different register map and bit functions
+•	No support for 1.5 stop bits (only 1 or 2 are allowed)
+•	No support for independent receive clock
+•	Modem delta status signals are not available
+________________________________________
+Summary
+The ARM PL011 UART is a powerful, programmable serial communication module that supports both traditional UART and infrared data transfer. It offers flexible settings, FIFO buffers, interrupt controls, and DMA support, making it suitable for a wide range of embedded applications. It's also more advanced than older UART designs like the 16C650, though not backward compatible.
+UART Product Revisions (Version Changes)
+The UART module has gone through several revisions (updates), and each revision may include functional changes or improvements. These changes are reflected in a special register called the UARTPeriphID2 register, specifically in bits [7:4], which identify the revision number.
+📋 Summary of Revisions:
+Revision Range	What's Changed?
+r1p0 → r1p1	- The UARTPeriphID2 register bits [7:4] now return 0x1
+r1p1 → r1p3	- The UARTPeriphID2 register bits [7:4] now return 0x2
+r1p3 → r1p4	- No change in the revision field; still 0x2
+r1p4 → r1p5	- Transmit and receive FIFOs are increased to 32-depth (more buffer size)
+- UARTPeriphID2 register bits [7:4] now return 0x3
+________________________________________
+📌 Note:
+For more technical details or bugs in any version, you should refer to the engineering errata provided along with the product documentation.
+📘 Chapter 2: Functional Overview of UART
+This chapter explains the main working blocks and capabilities of the UART (Universal Asynchronous Receiver/Transmitter) peripheral in an ARM-based SoC.
+________________________________________
+📑 Sections in Chapter 2
+1.	Overview
+2.	Functional Description
+3.	IrDA SIR ENDEC Functional Description
+4.	UART Operation
+5.	UART Modem Operation
+6.	UART Hardware Flow Control
+7.	UART DMA Interface
+8.	Interrupts
+________________________________________
+🔍 Overview
+✅ Main Functions
+The UART performs:
+•	Serial-to-parallel conversion: Converts data coming from outside (peripheral) into a format the CPU can process.
+•	Parallel-to-serial conversion: Converts data from the CPU into serial format to send out.
+✅ Data Access
+•	CPU reads/writes data and control/status via the APB (Advanced Peripheral Bus).
+•	Data paths (transmit and receive) use independent FIFO buffers:
+o	32-byte Transmit FIFO
+o	32-byte Receive FIFO
+These buffers help reduce the number of CPU accesses and avoid data loss.
+________________________________________
+⏱️ Baud Rate and Clock
+•	The UART includes a programmable baud rate generator.
+•	It derives a shared clock for transmitting and receiving from the UARTCLK reference input.
+•	It supports similar functions to the industry-standard 16C650 UART.
+📈 Maximum Supported Baud Rates:
+Mode	Max Baud Rate
+UART mode	921,600 bps
+IrDA mode	460,800 bps
+Low-power IrDA mode	115,200 bps
+Registers to configure baud rate and format:
+•	UARTLCR_H – Line control (data length, stop bits, parity)
+•	UARTIBRD – Integer baud rate divisor
+•	UARTFBRD – Fractional baud rate divisor
+________________________________________
+🔔 Interrupts
+UART can generate individually maskable interrupts for:
+•	Transmit
+•	Receive (including timeout)
+•	Modem status
+•	Error conditions
+You can also enable a single combined interrupt: asserted if any unmasked condition occurs.
+________________________________________
+📦 DMA Support
+UART can raise DMA request signals to allow direct data transfer between memory and UART — bypassing the CPU — for efficient high-speed communication.
+________________________________________
+⚠️ Error Handling
+•	Framing, parity, or break errors:
+o	Corresponding error bits are set
+o	Data is still stored in the FIFO with error status
+•	Overrun condition:
+o	Happens when FIFO is full and new data arrives
+o	Overrun bit is set
+o	New data is discarded (FIFO content is protected)
+You can also configure FIFO to 1-byte depth, making it behave like a simple double-buffered UART.
+________________________________________
+📞 Modem Control Signals
+UART supports standard modem signals:
+•	Input signals:
+o	CTS (Clear To Send)
+o	DCD (Data Carrier Detect)
+o	DSR (Data Set Ready)
+o	RI (Ring Indicator)
+•	Output signals:
+o	RTS (Request To Send)
+o	DTR (Data Terminal Ready)
+________________________________________
+🔄 Hardware Flow Control
+•	Uses nUARTCTS (input) and nUARTRTS (output) signals
+•	Automatically manages flow of data based on line status
+•	Prevents overflow or data loss during high-speed transfers
+________________________________________
+🌐 IrDA SIR Block (Infrared Communication)
+•	UART includes an IrDA SIR protocol ENDEC (encoder/decoder)
+•	Instead of standard serial pins (UARTTXD, UARTRXD), it uses:
+o	SIROUT (output)
+o	SIRIN (input)
+•	Works with an infrared transceiver
+⚙️ Behavior When IrDA is Enabled:
+•	UARTTXD line stays HIGH (inactive)
+•	UARTRXD and modem status signals are ignored
+•	IrDA works in half-duplex mode:
+o	Can either transmit or receive, but not both at the same time
+•	IrDA requires a minimum 10ms delay between transmission and reception.
+________________________________________
+✅ Summary
+The UART module offers:
+•	Reliable data transfer using FIFOs and baud rate generator
+•	Configurable data format and flow control
+•	Support for interrupts and DMA
+•	Modem interface signals for serial communication standards
+•	Infrared (IrDA) communication option
+2.2 UART Functional Description
+🔹 Top-Level View
+The UART block can be divided into 5 functional parts:
+1.	APB Interface & Register Block
+2.	Baud Rate Generator
+3.	Transmit Path
+4.	Receive Path
+5.	FIFO & Interrupt/DMA Handling
+________________________________________
+1️⃣ APB Interface and Register Block
+•	Signals: PCLK, PSEL, PENABLE, PWRITE, PADDR, PWDATA, PRDATA
+•	This is how the processor (CPU / APB bus master) configures and communicates with UART.
+•	Functions:
+o	Configure baud rate divisor, control registers, interrupt enable, FIFO control, etc.
+o	Write to TX FIFO (data to send).
+o	Read from RX FIFO (received data).
+o	Expose status flags (empty/full/error).
+________________________________________
+2️⃣ Baud Rate Generator
+•	Takes UARTCLK (reference clock).
+•	Uses baud rate divisor to generate a Baud16 clock → 16× oversampling for accurate RX sampling.
+•	Ensures correct transmit timing and receive sampling.
+________________________________________
+3️⃣ Transmit Path
+•	32×8 Transmit FIFO
+o	Stores outgoing characters (up to 32 bytes).
+o	CPU or DMA writes into it via APB.
+•	Transmitter
+o	Fetches data from FIFO.
+o	Adds start bit, data bits, parity (if enabled), stop bit(s) → forming the UART frame.
+o	Sends serialized data via UARTTXD.
+o	If IrDA SIR mode → passes through SIR encoder → nSIROUT.
+________________________________________
+4️⃣ Receive Path
+•	UART input pin: UARTRXD (or SIRIN if using IrDA).
+•	Receiver
+o	Samples input at 16× baud rate (Baud16).
+o	Detects start bit, shifts in data bits, checks parity & stop bits.
+o	Pushes valid data into 32×12 Receive FIFO (stores data + error flags).
+•	CPU/DMA reads from RX FIFO via APB.
+________________________________________
+5️⃣ FIFO Status & Interrupt Generation
+•	Monitors:
+o	TX FIFO status (empty, almost full, etc.).
+o	RX FIFO status (full, threshold reached, etc.).
+o	Error conditions (parity, framing, overrun).
+•	Generates interrupts:
+o	UARTTXINTR, UARTRXINTR, UARTMSINTR, UARTRTINTR, etc.
+•	Works with DMA interface for high-speed data transfer:
+o	UARTRXDMASREQ / UARTTXDMASREQ for DMA requests.
+o	UARTRXDMAACK / UARTTXDMAACK for acknowledgements.
+________________________________________
+🔹 Reset Signals
+•	PRESETn (global reset) + nUARTRST (block reset).
+•	Reset clears FIFOs and control registers.
+________________________________________
+🔹 Data Flow Summary
+1.	CPU writes a byte → APB bus → TX FIFO → Transmitter → UARTTXD pin.
+2.	Remote data arrives on RXD → Receiver → RX FIFO → CPU/DMA reads via APB.
+3.	Baud rate generator ensures correct timing.
+4.	FIFO + Interrupt/DMA make data movement efficient.
+________________________________________
+✅ In short:
+•	The APB interface is the control brain.
+•	The baud rate generator sets timing.
+•	TX FIFO → Transmitter → UARTTXD handles sending.
+•	RXD → Receiver → RX FIFO handles receiving.
+•	FIFO status + Interrupt/DMA provide efficient, error-checked communication.
+.
+________________________________________
+🧱 Main Blocks Described in This Section
+Each sub-block plays a distinct role in the UART’s operation. Here’s a concise explanation:
+________________________________________
+2.2.1 AMBA APB Interface
+•	Interfaces UART with the CPU via APB bus.
+•	Handles read/write decoding for:
+o	Status/control registers
+o	Transmit FIFO
+o	Receive FIFO
+________________________________________
+2.2.2 Register Block
+•	Stores:
+o	Data written via APB
+o	Data read by the CPU
+•	Acts as the access point for UART configuration and control.
+________________________________________
+2.2.3 Baud Rate Generator
+•	Generates internal timing signals for:
+o	UART mode: Baud16 (16× baud rate)
+o	Low-power IrDA mode: IrLPBaud16
+•	These are derived from the UARTCLK (reference clock).
+•	Ensures proper timing for:
+o	Transmit and receive logic
+o	IrDA pulse width generation
+________________________________________
+2.2.4 Transmit FIFO
+•	8-bit wide, 32-entry buffer
+•	Temporarily holds data written by CPU before sending
+•	Can be disabled to behave like a 1-byte register
+________________________________________
+2.2.5 Receive FIFO
+•	12-bit wide, 32-entry buffer
+•	Holds received data plus error status bits
+•	Can also be disabled to act like a 1-byte register
+________________________________________
+2.2.6 Transmit Logic
+•	Reads from the Transmit FIFO
+•	Converts parallel data to serial
+•	Sends frame:
+o	Start bit
+o	Data bits (LSB first)
+o	Parity bit (if configured)
+o	Stop bits
+________________________________________
+2.2.7 Receive Logic
+•	Detects start bit
+•	Converts serial to parallel
+•	Performs error detection:
+o	Parity error
+o	Framing error
+o	Overrun
+o	Break condition
+•	Writes data and error info to Receive FIFO
+________________________________________
+2.2.8 Interrupt Generation Logic
+•	Generates individual maskable interrupts for:
+o	Transmit
+o	Receive
+o	Modem status
+o	Error conditions
+•	Also generates a combined interrupt output (logical OR of all interrupt sources)
+•	Two usage modes:
+o	Modular drivers: Use combined interrupt
+o	Global interrupt controller: Use individual interrupt lines
+________________________________________
+2.2.9 DMA Interface
+•	UART can raise request data transfers through a Direct Memory Access (DMA) controller.
+•	Reduces CPU load during large or fast data transfers.
+•	See Section 2.19 for details.
+________________________________________
+2.2.10 Synchronization Registers and Logic
+•	The uart supports both asynchronous and synchronous operation clock pclk,uartclk.
+•	Synchronization registers and handshaking logic have been implemented and are active at all times.
+•	Synchronization of control sigal is performed on both directions of data flow.that is pclk to uartclk domain and uartclk to pclk domain. ________________________________________
+
+2.2.11 Test Registers and Logic
+•	Used only for integration and functional testing
+•	Provides access to all UART inputs/outputs for verification
+•	Do NOT use during normal operation
+________________________________________
+📊 Block Diagram (Figure 2-1 Summary)
+The UART block diagram includes:
+•	FIFO Buffers: 32×8 Transmit and 32×12 Receive
+•	Transmit and Receive logic
+•	Baud Rate Generator
+•	APB Interface & Control Logic
+•	DMA Interface
+•	Interrupt Generator
+•	Modem I/O (CTS, RTS, DSR, etc.)
+•	IrDA Interface (SIRIN, SIROUT)
+📌 Inputs like PCLK, PWRITE, PADDR, etc., are from the APB interface, while outputs like UARTTXD, UARTRXD are connected to serial lines or transceivers.
