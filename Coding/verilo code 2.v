@@ -1,19 +1,40 @@
-| Feature        | `initial` Block                                                            | `always` Block                                                                 |
-| -------------- | -------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
-| **Execution**  | Executes **only once** at the start of simulation.                         | Executes **repeatedly**, as long as simulation runs.                           |
-| **Usage**      | Used for **testbench code**, stimulus generation, or initializing signals. | Used for **design logic**, like modeling combinational or sequential circuits. |
-| **Start time** | Starts at simulation **time 0**.                                           | Also starts at **time 0**.                                                     |
-| **End time**   | Ends when it reaches the last statement.                                   | Never ends (loops forever).                                                    |
-| **Synthesis**  | Not synthesizable (ignored by hardware).                                   | Synthesizable (forms actual logic in hardware).                                |
-| **Common in**  | Testbenches, initialization of variables.                                  | RTL design (flip-flops, combinational logic).                                  |
+| **Aspect**                      | **Function**                                                          | **Task**                                                             |
+| ------------------------------- | --------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| **Return Value**                | Must return a single value (using function name).                     | Cannot return directly, but can pass multiple outputs via arguments. |
+| **Arguments**                   | Only **input** arguments allowed (cannot use output or inout).        | Can have **input, output, and inout** arguments.                     |
+| **Timing Control (#, @, wait)** | **Not allowed** – functions must execute in **zero simulation time**. | **Allowed** – tasks can contain `#`, `@`, `wait`, etc.               |
+| **Usage**                       | Used for **combinational logic, simple calculations**.                | Used for **complex operations, testbenches, sequential behavior**.   |
+| **Return Type**                 | Must be declared (e.g., `integer`, `reg`, `bit`).                     | No return type. Values passed via output or inout.                   |
+| **Execution Time**              | Zero time (purely combinational).                                     | Can consume simulation time.                                         |
+| **Example Use Case**            | Arithmetic calculation, priority encoder logic.                       | Stimulus generation, data transactions, handshake protocols.         |
 
 
+  | **System Task**   | **Purpose**                     |
+| ----------------- | ------------------------------- |
+| `$display`        | Print message once              |
+| `$monitor`        | Continuously monitor signals    |
+| `$strobe`         | Print values at end of timestep |
+| `$time/$realtime` | Get current simulation time     |
+| `$finish`         | End simulation                  |
+| `$stop`           | Pause simulation                |
+| `$dumpfile`       | Create waveform file            |
+| `$dumpvars`       | Dump signal values              |
+| `$random`         | Generate random numbers         |
+| `$fopen/$fclose`  | Open/close file                 |
+| `$fdisplay`       | Print into file                 |
 
-| Feature                 | Sequential Block (`begin…end`)                             | Parallel Block (`fork…join`)                                                        |
-| ----------------------- | ---------------------------------------------------------- | ----------------------------------------------------------------------------------- |
-| **Execution**           | Statements execute **one after another** (serial).         | Statements execute **concurrently** (in parallel).                                  |
-| **Timing control**      | Next statement waits until previous one finishes.          | All statements start together, each with its own delay.                             |
-| **Usage**               | Used for **ordered operations** (e.g., reset then assign). | Used for **concurrent operations** (e.g., two signals toggling at different times). |
-| **Example**             | `verilog<br>initial begin<br>  a=1;<br>  #5 b=1;<br>end`   | `verilog<br>initial fork<br>  #5 a=1;<br>  #10 b=1;<br>join`                        |
-| **Simulation behavior** | Total time = sum of all delays inside the block.           | Total time = maximum of branch delays.                                              |
+
+  | Directive            | Purpose                              |
+| -------------------- | ------------------------------------ |
+| \`define             | Define macro/constant                |
+| \`include            | Include external file                |
+| \`timescale          | Set simulation time unit & precision |
+| `ifdef / `ifndef     | Conditional compilation              |
+| \`undef              | Undefine a macro                     |
+| \`default\_nettype   | Control implicit nets                |
+| \`celldefine         | Mark module as a cell                |
+| \`unconnected\_drive | Drive unconnected inputs             |
+| \`resetall           | Reset directives                     |
+
+
 
