@@ -1,56 +1,59 @@
-module half_subtractor (
-    input a, b,
-    output diff, borrow);
-    assign diff   = a ^ b;
-    assign borrow = (~a) & b;
-endmodule
+module comparator_4bit (
+    input  [3:0] A,
+    input  [3:0] B,
+    output reg A_gt_B,
+    output reg A_lt_B,
+    output reg A_eq_B);
 
-module full_subtractor (
-input a, b, bin,    
-output diff, bout);
-
-wire d1, b1, b2;  
-
-half_subtractor hs1 (
-.a(a),
-.b(b),
-.diff(d1),
-.borrow(b1));
-half_subtractor hs2 (
-.a(d1),
-.b(bin),
-.diff(diff),
-.borrow(b2));
-
-or(bout, b1, b2);
+always @(*) begin
+if (A > B) begin
+A_gt_B = 1;
+A_lt_B = 0;
+A_eq_B = 0;
+end
+else if (A < B) begin
+A_gt_B = 0;
+A_lt_B = 1;
+A_eq_B = 0;
+end
+else begin  // A == B
+A_gt_B = 0;
+A_lt_B = 0;
+A_eq_B = 1;
+end
+end
 
 endmodule
 
 
 `timescale 1ns/1ps
 
-module tb_full_subtractor;
+module tb_comparator_4bit;
 
-reg a, b, bin;
-wire diff, bout;
+    reg  [3:0] A, B;
+    wire A_gt_B, A_lt_B, A_eq_B;
 
-full_subtractor dut (
-.a(a), .b(b), .bin(bin),
-.diff(diff), .bout(bout) );
+comparator_4bit dut (
+        .A(A),
+        .B(B),
+        .A_gt_B(A_gt_B),
+        .A_lt_B(A_lt_B),
+        .A_eq_B(A_eq_B) );
 
 initial begin
-$monitor("Time=%0t | a=%b b=%b bin=%b -> diff=%b bout=%b",
-$time, a, b, bin, diff, bout);
+$display("Time\t A\t B\t A_gt_B A_lt_B A_eq_B");
 
-a=0; b=0; bin=0; #10;
-a=0; b=0; bin=1; #10;
-a=0; b=1; bin=0; #10;
-a=0; b=1; bin=1; #10;
-a=1; b=0; bin=0; #10;
-a=1; b=0; bin=1; #10;
-a=1; b=1; bin=0; #10;
-a=1; b=1; bin=1; #10;
+$monitor("%0t\t %b\t %b\t   %b      %b      %b", 
+                  $time, A, B, A_gt_B, A_lt_B, A_eq_B);
+
+A = 4'b0000; B = 4'b0000; #10;  // equal
+A = 4'b0101; B = 4'b0011; #10;  // A > B
+A = 4'b0010; B = 4'b1001; #10;  // A < B
+A = 4'b1111; B = 4'b1111; #10;  // equal
+A = 4'b1000; B = 4'b0111; #10;  // A > B
+A = 4'b0110; B = 4'b1000; #10;  // A < B
 
 $finish;
 end
+
 endmodule
