@@ -86,3 +86,87 @@ module tb_sequential_alu;
     end
 
 endmodule
+
+-----------------------------------------------------------------------------------------
+module stimulus (
+    output reg [3:0] a,
+    output reg [3:0] b,
+    output reg [2:0] sel,
+    output reg reset,
+    input  wire clk,
+    input  wire [3:0] y
+);
+
+    reg [3:0] exp;  
+
+    task run_test(input [3:0] ta, input [3:0] tb, input [2:0] tsel, input [15*8:1] name);
+        begin
+            a = ta; b = tb; sel = tsel;
+            #20;
+            case (tsel)
+                3'b000: exp = ta + tb;
+                3'b001: exp = ta - tb;
+                3'b010: exp = ta * tb;
+                3'b011: exp = (tb != 0) ? (ta / tb) : 0;
+                3'b100: exp = ta & tb;
+                3'b101: exp = ~ta;
+                3'b110: exp = ta | tb;
+                3'b111: exp = ta ^ tb;
+                default: exp = 0;
+            endcase
+            if (y === exp)
+                $display("PASS %s: a=%0d b=%0d sel=%b y=%0d", name, ta, tb, tsel, y);
+            else
+                $display("FAIL %s: a=%0d b=%0d sel=%b y=%0d exp=%0d", name, ta, tb, tsel, y, exp);
+        end
+    endtask
+
+
+    task tc01_add; begin run_test(4, 3, 3'b000, "TC-01 ADD"); end endtask
+    task tc02_sub; begin run_test(7, 2, 3'b001, "TC-02 SUB"); end endtask
+    task tc03_mul; begin run_test(3, 2, 3'b010, "TC-03 MUL"); end endtask
+
+ 
+    task tc04_div; begin run_test($random % 16, $random % 16, 3'b011, "TC-04 DIV"); end endtask
+    task tc05_and; begin run_test($random % 16, $random % 16, 3'b100, "TC-05 AND"); end endtask
+    task tc06_xor; begin run_test($random % 16, $random % 16, 3'b111, "TC-06 XOR"); end endtask
+
+
+    initial begin
+        reset = 1; a = 0; b = 0; sel = 0;
+        #25 reset = 0;
+
+        $display("===== 3 Directed Tests =====");
+        tc01_add;
+        tc02_sub;
+        tc03_mul;
+
+        $display("===== 3 Random Tests =====");
+        tc04_div;
+        tc05_and;
+        tc06_xor;
+
+        $display("===== Tests Complete =====");
+        $finish;
+    end
+endmodule
+
+
+module tb_top;
+    reg clk;
+    wire [3:0] a, b;
+    wire [2:0] sel;
+    wire reset;
+    wire [3:0] y;
+
+    sequential_alu dut (.clk(clk),.reset(reset),.a(a),.b(b),.sel(sel),.y(y));
+
+    stimulus stim (.a(a),.b(b),.sel(sel),.reset(reset),.clk(clk),.y(y));
+
+    always #10 clk = ~clk;
+
+    initial begin
+        clk = 0;
+    end
+endmodule
+--------------------------------------------------------------------------------
