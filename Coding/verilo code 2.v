@@ -170,3 +170,17 @@ module tb_top;
     end
 endmodule
 --------------------------------------------------------------------------------
+ // ---------- 5 Random Testcases ----------
+    task tc06_rand_add; run_test($random % 16, $random % 16, 3'b000, "TC-06 RAND ADD"); endtask
+    task tc07_rand_sub; run_test($random % 16, $random % 16, 3'b001, "TC-07 RAND SUB"); endtask
+    task tc08_rand_mul; run_test($random % 16, $random % 16, 3'b010, "TC-08 RAND MUL"); endtask
+    task tc09_rand_logic; run_test($random % 16, $random % 16, 3'b110, "TC-09 RAND OR"); endtask
+    task tc10_rand_xor; run_test($random % 16, $random % 16, 3'b111, "TC-10 RAND XOR"); endtask
+
+ $display("===== Running 5 Random ALU Tests =====");
+        tc06_rand_add;
+        tc07_rand_sub;
+        tc08_rand_mul;
+        tc09_rand_logic;
+        tc10_rand_xor;
+
