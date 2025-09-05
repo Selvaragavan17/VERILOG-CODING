@@ -1,160 +1,300 @@
-`timescale 1ns/1ps
+module alu_bfm (
+    input  wire       clk,
+    input  wire       reset,
+    output reg [3:0]  a,
+    output reg [3:0]  b,
+    output reg [2:0]  sel,
+    input  wire [3:0] y
+);
 
-module down_counter (
-input clk,    
-input rst_n,      
-output reg [3:0] q );
+    // Task: Drive operation
+    task drive_op(input [3:0] ta, input [3:0] tb, input [2:0] tsel, input [15*8:1] name);
+        begin
+            @(posedge clk);
+            a   = ta;
+            b   = tb;
+            sel = tsel;
+            @(posedge clk);
+            $display("BFM: Applied %s a=%0d b=%0d sel=%b -> y=%0d", 
+                       name, ta, tb, tsel, y);
+        end
+    endtask
 
-always @(posedge clk or negedge rst_n) begin
-if (!rst_n)
-q<=4'b1111;  
-else
-q<=q-1;     
-end
-endmodule
-
-`timescale 1ns/1ps
-
-module tb_down_counter;
-reg clk, rst_n;
-wire [3:0] q;
-down_counter dut (.clk(clk),.rst_n(rst_n),.q(q));
-
-always #5 clk=~clk;
-
-  initial begin
-$dumpfile("down_counter.vcd");
-$dumpvars(0, tb_down_counter);
-
-clk=0;
-rst_n=0;
-
-#10 rst_n=1;  
-#200;           
-$finish;
-end
-
-initial begin
-$monitor("Time=%0t | Counter = %b (%0d)", $time, q, q);
-end
-
-endmodule
------------------------------------------
-`timescale 1ns/1ps
-
-module updown_counter_3bit (
-    input clk,             
-    input rst_n,           
-    input load,          
-    input [2:0] data_in,   
-    input up_down,         
-    output reg [2:0] q);
-
-always @(posedge clk or negedge rst_n) begin
-if (!rst_n)
-q<=3'b000;                 
-else if (load)
-q<=data_in;             
-else if (up_down)
-q<=q+1;                  
-else
-q<=q-1;            
-end
+    // Reset task
+    task apply_reset;
+        begin
+            a = 0; b = 0; sel = 0;
+            @(posedge clk);
+        end
+    endtask
 
 endmodule
 
-`timescale 1ns/1ps
 
-module tb_updown_counter_3bit;
+module tb_top;
+    reg clk, reset;
+    wire [3:0] a, b;
+    wire [2:0] sel;
+    wire [3:0] y;
 
-reg clk, rst_n, load, up_down;
-reg [2:0] data_in;
-wire [2:0] q;
+    // DUT
+    sequential_alu dut (
+        .clk(clk), .reset(reset), .a(a), .b(b), .sel(sel), .y(y)
+    );
 
-updown_counter_3bit dut (.clk(clk),.rst_n(rst_n),.load(load),.data_in(data_in),.up_down(up_down),.q(q));
-always #5 clk =~clk;
+    // BFM
+    alu_bfm bfm (
+        .clk(clk), .reset(reset), .a(a), .b(b), .sel(sel), .y(y)
+    );
 
-initial begin
-$dumpfile("updown_counter_3bit.vcd");
-$dumpvars(0, tb_updown_counter_3bit);
+    // Clock
+    always #10 clk = ~clk;
 
-clk=0;
-rst_n=0; load=0; up_down=1; data_in=3'b000;
+    initial begin
+        clk = 0; reset = 1;
+        #25 reset = 0;
 
-#10 rst_n=1;  
-#10 load=1; data_in=3'b010;  
-#10 load=0;
-#50 up_down=1;
-#50 up_down=0;
-#50 $finish;
-end
+        bfm.drive_op(4, 3, 3'b000, "ADD");
+        bfm.drive_op(7, 2, 3'b001, "SUB");
+        bfm.drive_op(3, 2, 3'b010, "MUL");
+        bfm.drive_op($random % 16, $random % 16, 3'b011, "DIV");
 
-initial begin
-$monitor("Time=%0t | load=%b up_down=%b data_in=%b | q=%b (%0d)",$time, load, up_down, data_in, q, q);
-end
-
+        $finish;
+    end
 endmodule
-----------------------------------------------
-`timescale 1ns/1ps
+-------------------------------------------------------------
+module alu_monitor (
+    input wire clk,
+    input wire reset,
+    input wire [3:0] a, b,
+    input wire [2:0] sel,
+    input wire [3:0] y
+);
 
-module decimal_counter (
-    input clk,           
-    input rst_n,          
-    input load,            
-    input [3:0] data_in,   
-    input up_down,         
-    output reg [3:0] q );
-
-always @(posedge clk or negedge rst_n) begin
-if (!rst_n)
-q <=4'd0;                         
-else if (load)
-q <=(data_in<=4'd9) ? data_in:4'd0; 
-else if (up_down) begin
-if (q==4'd9)
-q<=4'd0;                     
-else
-q<=q+1;                  
-end
-else begin
-if (q==4'd0)
-q<=4'd9;                     
-else
-q<=q-1;                   
-end
-end
+    // Sample DUT signals every clock
+    always @(posedge clk) begin
+        if (!reset) begin
+            $display("MONITOR: Observed a=%0d b=%0d sel=%b -> y=%0d", a, b, sel, y);
+        end
+    end
 
 endmodule
 
+
+    // Inside tb_top
+    alu_monitor mon (
+        .clk(clk), .reset(reset),
+        .a(a), .b(b), .sel(sel), .y(y)
+    );
+---------------------------------------------------------------
+module alu_checker (
+    input wire clk,
+    input wire reset,
+    input wire [3:0] a, b,
+    input wire [2:0] sel,
+    input wire [3:0] y
+);
+
+    reg [3:0] exp;
+
+    always @(posedge clk) begin
+        if (!reset) begin
+            case (sel)
+                3'b000: exp = a + b;
+                3'b001: exp = a - b;
+                3'b010: exp = a * b;
+                3'b011: exp = (b != 0) ? (a / b) : 0;
+                3'b100: exp = a & b;
+                3'b101: exp = ~a;
+                3'b110: exp = a | b;
+                3'b111: exp = a ^ b;
+                default: exp = 0;
+            endcase
+
+            if (y === exp)
+                $display("CHECKER: PASS a=%0d b=%0d sel=%b -> y=%0d", a, b, sel, y);
+            else
+                $display("CHECKER: FAIL a=%0d b=%0d sel=%b -> y=%0d (exp=%0d)", 
+                          a, b, sel, y, exp);
+        end
+    end
+
+endmodule
+
+
+    // Inside tb_top
+    alu_checker check (
+        .clk(clk), .reset(reset),
+        .a(a), .b(b), .sel(sel), .y(y)
+    );
+---------------------------------------------------------------
+
 `timescale 1ns/1ps
 
-module tb_decimal_counter;
+// ======================================================
+// DUT: Sequential ALU
+// ======================================================
+module sequential_alu (
+    input        clk,
+    input        reset,
+    input  [3:0] a, b,
+    input  [2:0] sel,
+    output reg [3:0] y
+);
+    always @(posedge clk or posedge reset) begin
+        if (reset)
+            y <= 4'b0000;
+        else begin
+            case (sel)
+                3'b000: y <= a + b;                       // ADD
+                3'b001: y <= a - b;                       // SUB
+                3'b010: y <= a * b;                       // MUL
+                3'b011: y <= (b != 0) ? (a / b) : 0;      // DIV
+                3'b100: y <= a & b;                       // AND
+                3'b101: y <= ~a;                          // NOT
+                3'b110: y <= a | b;                       // OR
+                3'b111: y <= a ^ b;                       // XOR
+                default: y <= 0;
+            endcase
+        end
+    end
+endmodule
 
-reg clk, rst_n, load, up_down;
-reg [3:0] data_in;
-wire [3:0] q;
 
-decimal_counter dut (.clk(clk),.rst_n(rst_n),.load(load),.data_in(data_in),.up_down(up_down),.q(q));
+// ======================================================
+// BFM (Bus Functional Model)
+// Provides API to drive DUT inputs
+// ======================================================
+module bfm (
+    output reg [3:0] a, b,
+    output reg [2:0] sel,
+    output reg reset,
+    input      clk
+);
 
-always #5 clk=~clk;
+    // API Task: Drive inputs
+    task drive(input [3:0] ta, input [3:0] tb, input [2:0] tsel);
+        begin
+            @(posedge clk);
+            a    = ta;
+            b    = tb;
+            sel  = tsel;
+        end
+    endtask
 
-initial begin
-$dumpfile("decimal_counter.vcd");
-$dumpvars(0, tb_decimal_counter);
+    // API Task: Apply Reset
+    task apply_reset;
+        begin
+            reset = 1;
+            repeat(2) @(posedge clk);
+            reset = 0;
+        end
+    endtask
 
-clk=0;
-rst_n=0; load=0; up_down=1; data_in=4'd0;
+endmodule
 
-#10 rst_n=1;              
-#10 load=1; data_in=4'd5; 
-#10 load=0;
-#60 up_down=1;             
-#60 up_down=0;              
-#50 $finish;
-end
 
-initial begin
-$monitor("Time=%0t | load=%b up_down=%b data_in=%d | q=%d", $time, load, up_down, data_in, q);
-end
+// ======================================================
+// Monitor
+// Captures DUT outputs
+// ======================================================
+module monitor (
+    input clk,
+    input [3:0] a, b,
+    input [2:0] sel,
+    input [3:0] y
+);
 
+    always @(posedge clk) begin
+        $display("[MONITOR] time=%0t | a=%0d b=%0d sel=%b y=%0d",
+                  $time, a, b, sel, y);
+    end
+
+endmodule
+
+
+// ======================================================
+// Checker
+// Compares DUT output against expected value
+// ======================================================
+module checker (
+    input clk,
+    input [3:0] a, b,
+    input [2:0] sel,
+    input [3:0] y
+);
+    reg [3:0] expected;
+
+    always @(*) begin
+        case (sel)
+            3'b000: expected = a + b;
+            3'b001: expected = a - b;
+            3'b010: expected = a * b;
+            3'b011: expected = (b != 0) ? (a / b) : 0;
+            3'b100: expected = a & b;
+            3'b101: expected = ~a;
+            3'b110: expected = a | b;
+            3'b111: expected = a ^ b;
+            default: expected = 0;
+        endcase
+    end
+
+    always @(posedge clk) begin
+        if (y !== expected)
+            $display("[CHECKER-FAIL] time=%0t | a=%0d b=%0d sel=%b y=%0d exp=%0d",
+                      $time, a, b, sel, y, expected);
+        else
+            $display("[CHECKER-PASS] time=%0t | a=%0d b=%0d sel=%b y=%0d",
+                      $time, a, b, sel, y);
+    end
+endmodule
+
+
+// ======================================================
+// Top-Level Testbench
+// ======================================================
+module tb_top;
+    reg clk;
+    wire [3:0] a, b;
+    wire [2:0] sel;
+    wire reset;
+    wire [3:0] y;
+
+    // Instantiate DUT
+    sequential_alu dut (.clk(clk), .reset(reset), .a(a), .b(b), .sel(sel), .y(y));
+
+    // Instantiate BFM
+    bfm bfm_inst (.a(a), .b(b), .sel(sel), .reset(reset), .clk(clk));
+
+    // Instantiate Monitor
+    monitor mon (.clk(clk), .a(a), .b(b), .sel(sel), .y(y));
+
+    // Instantiate Checker
+    checker chk (.clk(clk), .a(a), .b(b), .sel(sel), .y(y));
+
+    // Clock generation (50MHz -> 20ns period)
+    always #10 clk = ~clk;
+
+    // Testcases using BFM API
+    initial begin
+        clk = 0;
+        bfm_inst.apply_reset;
+
+        $display("===== START TESTCASES =====");
+
+        // Directed Testcases
+        bfm_inst.drive(4, 3, 3'b000);  // ADD
+        bfm_inst.drive(7, 2, 3'b001);  // SUB
+        bfm_inst.drive(5, 3, 3'b100);  // AND
+        bfm_inst.drive(6, 2, 3'b110);  // OR
+        bfm_inst.drive(9, 4, 3'b111);  // XOR
+
+        // Random Testcases
+        repeat(3) begin
+            bfm_inst.drive($random % 16, $random % 16, $random % 8);
+        end
+
+        $display("===== END TESTCASES =====");
+        #50 $finish;
+    end
 endmodule
