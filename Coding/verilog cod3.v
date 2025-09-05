@@ -7,7 +7,6 @@ module alu_bfm (
     input  wire [3:0] y
 );
 
-    // Task: Drive operation
     task drive_op(input [3:0] ta, input [3:0] tb, input [2:0] tsel, input [15*8:1] name);
         begin
             @(posedge clk);
@@ -20,7 +19,6 @@ module alu_bfm (
         end
     endtask
 
-    // Reset task
     task apply_reset;
         begin
             a = 0; b = 0; sel = 0;
@@ -37,17 +35,15 @@ module tb_top;
     wire [2:0] sel;
     wire [3:0] y;
 
-    // DUT
     sequential_alu dut (
         .clk(clk), .reset(reset), .a(a), .b(b), .sel(sel), .y(y)
     );
 
-    // BFM
     alu_bfm bfm (
         .clk(clk), .reset(reset), .a(a), .b(b), .sel(sel), .y(y)
     );
 
-    // Clock
+
     always #10 clk = ~clk;
 
     initial begin
@@ -71,7 +67,7 @@ module alu_monitor (
     input wire [3:0] y
 );
 
-    // Sample DUT signals every clock
+
     always @(posedge clk) begin
         if (!reset) begin
             $display("MONITOR: Observed a=%0d b=%0d sel=%b -> y=%0d", a, b, sel, y);
@@ -81,7 +77,7 @@ module alu_monitor (
 endmodule
 
 
-    // Inside tb_top
+
     alu_monitor mon (
         .clk(clk), .reset(reset),
         .a(a), .b(b), .sel(sel), .y(y)
@@ -122,7 +118,7 @@ module alu_checker (
 endmodule
 
 
-    // Inside tb_top
+
     alu_checker check (
         .clk(clk), .reset(reset),
         .a(a), .b(b), .sel(sel), .y(y)
@@ -131,9 +127,6 @@ endmodule
 
 `timescale 1ns/1ps
 
-// ======================================================
-// DUT: Sequential ALU
-// ======================================================
 module sequential_alu (
     input        clk,
     input        reset,
@@ -161,10 +154,7 @@ module sequential_alu (
 endmodule
 
 
-// ======================================================
-// BFM (Bus Functional Model)
-// Provides API to drive DUT inputs
-// ======================================================
+
 module bfm (
     output reg [3:0] a, b,
     output reg [2:0] sel,
@@ -172,7 +162,7 @@ module bfm (
     input      clk
 );
 
-    // API Task: Drive inputs
+
     task drive(input [3:0] ta, input [3:0] tb, input [2:0] tsel);
         begin
             @(posedge clk);
@@ -182,7 +172,6 @@ module bfm (
         end
     endtask
 
-    // API Task: Apply Reset
     task apply_reset;
         begin
             reset = 1;
@@ -194,10 +183,7 @@ module bfm (
 endmodule
 
 
-// ======================================================
-// Monitor
-// Captures DUT outputs
-// ======================================================
+
 module monitor (
     input clk,
     input [3:0] a, b,
@@ -213,10 +199,7 @@ module monitor (
 endmodule
 
 
-// ======================================================
-// Checker
-// Compares DUT output against expected value
-// ======================================================
+
 module checker (
     input clk,
     input [3:0] a, b,
@@ -250,9 +233,7 @@ module checker (
 endmodule
 
 
-// ======================================================
-// Top-Level Testbench
-// ======================================================
+
 module tb_top;
     reg clk;
     wire [3:0] a, b;
@@ -260,37 +241,29 @@ module tb_top;
     wire reset;
     wire [3:0] y;
 
-    // Instantiate DUT
     sequential_alu dut (.clk(clk), .reset(reset), .a(a), .b(b), .sel(sel), .y(y));
 
-    // Instantiate BFM
     bfm bfm_inst (.a(a), .b(b), .sel(sel), .reset(reset), .clk(clk));
 
-    // Instantiate Monitor
     monitor mon (.clk(clk), .a(a), .b(b), .sel(sel), .y(y));
 
-    // Instantiate Checker
     checker chk (.clk(clk), .a(a), .b(b), .sel(sel), .y(y));
 
-    // Clock generation (50MHz -> 20ns period)
     always #10 clk = ~clk;
 
-    // Testcases using BFM API
     initial begin
         clk = 0;
         bfm_inst.apply_reset;
 
         $display("===== START TESTCASES =====");
 
-        // Directed Testcases
         bfm_inst.drive(4, 3, 3'b000);  // ADD
         bfm_inst.drive(7, 2, 3'b001);  // SUB
         bfm_inst.drive(5, 3, 3'b100);  // AND
         bfm_inst.drive(6, 2, 3'b110);  // OR
         bfm_inst.drive(9, 4, 3'b111);  // XOR
 
-        // Random Testcases
-        repeat(3) begin
+        repeat(5) begin
             bfm_inst.drive($random % 16, $random % 16, $random % 8);
         end
 
