@@ -18,21 +18,24 @@ module stimulus(
     end
   endtask
   
-  // Apply stimulus
-  initial begin
-    $display("=== FIFO DIRECTED TESTCASES BEGIN ===");
-    rst_n = 0;
-    wr_enb = 0;
-    rd_enb = 0;
-    wr_data = 0;
 
-    // Apply reset
-    #10;
-    rst_n = 1;
-    $display("T0: Reset applied → FIFO empty = %b", fifo_empty);
-    show();
+    
+    task tc_reset;
+    begin
+    $display("\n[TC0] Reset sequence");
+      rst_n = 0;
+      wr_enb = 0;
+      rd_enb = 0;
+      wr_data = 0;
+      repeat(2) @(posedge clk);   
+      rst_n = 1;
+      @(posedge clk); #1; show();
+      end
+    endtask
 
-    // --- TC1: Single Write ---
+    
+    task tc_single_write_read;
+    begin
     #10;
     wr_enb = 1; wr_data = 8'hA5;
     $display("T1: Writing data = %h", wr_data);
@@ -41,9 +44,8 @@ module stimulus(
     wr_enb = 0;
     #10;$display("    FIFO empty = %b, FIFO full = %b", fifo_empty, fifo_full);
     show();
-
-    // --- TC2: Single Read ---
-    #10;
+    
+  
     rd_enb = 1;
     #10;
     $display("T2: Read data = %h", rd_data);
@@ -51,8 +53,12 @@ module stimulus(
     rd_enb = 0;
     #10;$display("    FIFO empty = %b, FIFO full = %b", fifo_empty, fifo_full);
     show();
+    end
+    endtask
 
-    // --- TC3: Fill FIFO ---
+   
+     task tc_partial_fill_drain;
+    begin
     $display("T3: Filling FIFO with 4 values");
     repeat (4) begin
       wr_enb = 1; wr_data = wr_data + 8'h11; #10;
@@ -63,8 +69,7 @@ module stimulus(
     $display("    FIFO full = %b", fifo_full);
     show();
 
-    // --- TC4: Read All Data ---
-    
+   
     $display("T4: Reading all data back");
     repeat (4) begin
       rd_enb = 1; #10;
@@ -74,45 +79,62 @@ module stimulus(
     rd_enb = 0;
     #10;$display("    FIFO empty = %b", fifo_empty);
     show();
+    end
+     endtask
 
-     // --- fill FIFO to full (DEPTH = 8) ---
+     
+    task tc_overrun;
+    begin
     $display("\nFilling FIFO to full (8 writes)");
     for (i = 0; i < 8; i = i + 1) begin
       wr_enb = 1; wr_data = i + 8'h10;
-      @(posedge clk); #1; show();   // capture status right after posedge
+      @(posedge clk); #1; show();   
     end
-    // stop writing
     wr_enb = 0; 
     @(posedge clk); #1; show();
 
-    // --- attempt one extra write -> should assert fifo_overrun for one cycle ---
+    
     $display("\nAttempting extra write to force OVERRUN");
     wr_enb = 1; wr_data = 8'hFF;
-    @(posedge clk); #1; show();     // THIS posedge is where fifo_overrun will be set if design works
-    // clear write
+    @(posedge clk); #1; show();     
+    
     wr_enb = 0;
-    @(posedge clk); #1; show();     // show next cycle (flag cleared)
+    @(posedge clk); #1; show();
+    end
+    endtask
+  
 
-    // --- drain FIFO completely ---
+   
+    task tc_underrun;
+    begin
     $display("\nDraining FIFO completely (reads)");
     for (i = 0; i < 8; i = i + 1)  begin
       rd_enb = 1;
       @(posedge clk); #1; show();
+    end
       rd_enb = 0;
       @(posedge clk); #1;show();
     end
 
-    // --- attempt extra read -> should assert fifo_underrun for one cycle ---
     $display("\nAttempting extra read to force UNDERRUN");
     rd_enb = 1;
-    @(posedge clk); #1; show();     // THIS posedge is where fifo_underrun will be set if design works
+    @(posedge clk); #1; show();     
     rd_enb = 0;
-    @(posedge clk); #1; show();     // show next cycle (flag cleared)
+    @(posedge clk); #1; show();
+    endtask
 
-    $display("\nFinished overrun/underrun checks");
 
-    $display("=== FIFO DIRECTED TESTCASES END ===");
-    $finish;
+    initial begin
+    $display("\n=== FIFO DIRECTED TESTCASES BEGIN ===");
+
+    tc_reset();
+    tc_single_write_read();
+    tc_partial_fill_drain();
+    tc_overrun();
+    tc_underrun();
+
+    $display("\n=== FIFO DIRECTED TESTCASES END ===");
+    #20 $finish;
   end
 
 endmodule
