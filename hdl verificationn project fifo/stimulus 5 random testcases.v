@@ -133,92 +133,33 @@ module stimulus(
     end
 endmodule
 -------------------------------------------------------------------------------------------
-TC6 – Random Write/Read Mix
-
-Purpose: Check FIFO when both writes and reads happen randomly together.
-
-Steps:
-
-For 10 cycles, randomly choose whether to write (wr_enb=1) or not, and read (rd_enb=1) or not.
-
-If writing, send a random 8-bit data value.
-
-If reading, capture whatever comes out.
-
-Expected Result:
-
-No corruption of data.
-
-FIFO must follow proper order (first-in, first-out).
-
-Status flags (full, empty) must behave correctly.
-
-TC7 – Random Writes Only
-
-Purpose: Test FIFO behavior when only random data is written (no reads).
-
-Steps:
-
-Perform 5 writes, each with a random 8-bit value.
-
-Do not read anything.
-
-Expected Result:
-
-FIFO should store all written values in sequence.
-
-If FIFO becomes full, fifo_full must go high.
-
-Data remains inside until a read happens.
-
-TC8 – Random Reads Only
-
-Purpose: Check FIFO response when reads are attempted without enough data.
-
-Steps:
-
-Try 7 consecutive reads, even if the FIFO might be empty.
-
-No new writes are made.
-
-Expected Result:
-
-If FIFO is empty, fifo_empty should go high.
-
-Reading from an empty FIFO should not produce random garbage data (DUT should either keep last value or assert underrun).
-
-TC9 – Random Burst Write then Read
-
-Purpose: Verify FIFO with burst operations (random burst length between 1–8).
-
-Steps:
-
-Pick a random burst length.
-
-Write that many random values continuously into FIFO.
-
-Then read the same number of values back.
-
-Expected Result:
-
-Data written in burst must come out in the same order.
-
-FIFO flags (almost_full, almost_empty) should toggle correctly.
-
-TC10 – Random Full/Drain Cycle
-
-Purpose: Stress test FIFO by filling it completely and then draining it.
-
-Steps:
-
-Write 8 random values (fill FIFO fully).
-
-Then read all 8 values back one by one (drain).
-
-Expected Result:
-
-Data comes out in correct order (first-in-first-out).
-
-After full, fifo_full should go high.
-
-After drain, fifo_empty should go high.
+Random 1 – Random Write/Read Mix
+Purpose: Check FIFO works when writes and reads happen randomly.
+Setup: Run for 10 cycles.
+Steps: Each cycle, randomly choose to write or read. Write random data if writing.
+Expected: Data is correct, no errors, flags show proper status.
+Pass: No wrong data, no flag mistakes.
+Random 2 – Random Writes Only
+Purpose: Check FIFO when only writing random data.
+Setup: Run 5 write cycles.
+Steps: Write 5 random values, one per clock.
+Expected: All data stored, flags show almost-full/full if needed.
+Pass: Data stored correctly, flags correct.
+Random 3 – Random Reads Only
+Purpose: Check FIFO when only reading.
+Setup: Run 7 read cycles.
+Steps: Read 7 times, see what comes out.
+Expected: Valid data if FIFO has data, empty if not.
+Pass: No garbage data, empty/underrun handled right.
+Random 4 – Random n Writes then Read
+Purpose: Check data order for random count.
+Setup: Pick random number 1–8.
+Steps: Write that many random values, then read same number.
+Expected: Reads match writes in same order.
+Pass: Data order correct, flags update right.
+Random 5 – Full then Drain
+Purpose: Check FIFO when filled and then emptied.
+Setup: Write 8, then read 8.
+Steps: Fill FIFO with 8 random values. Then read all 8.
+Expected: Reads give same 8 values in order, flags show full and empty.
+Pass: Data correct, flags correct.
