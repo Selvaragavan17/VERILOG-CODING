@@ -1,14 +1,13 @@
 module stimulus(
-  input                   clk,
-  output reg              rst_n,
-  output reg  [7:0]       wr_data,
-  output reg              wr_enb,
-  output reg              rd_enb,
-  input       [7:0]       rd_data,
-  input                   fifo_full, fifo_empty,
-  input                   fifo_almost_full, fifo_almost_empty,
-  input                   fifo_overrun, fifo_underrun
-);
+  input clk,
+  output reg rst_n,
+  output reg  [7:0]wr_data,
+  output reg wr_enb,
+  output reg rd_enb,
+  input [7:0]rd_data,
+  input fifo_full, fifo_empty,
+  input fifo_almost_full, fifo_almost_empty,
+  input fifo_overrun, fifo_underrun);
   integer i;
 
   task show;
@@ -19,12 +18,11 @@ module stimulus(
   endtask
   
 
-    
-    // ---------------- RANDOM TESTCASES ----------------
+ 
     task tc_random_write_read;
       integer j;
       begin
-        $display("\n[TC6] Random Write/Read Mix");
+        $display("\n--- Random Write/Read Mix ---");
         for (j = 0; j < 10; j = j + 1) begin
           wr_enb  = $random & 1;         // 0 or 1
           rd_enb  = $random & 1;         // 0 or 1
@@ -41,7 +39,7 @@ module stimulus(
     task tc_random_writes_only;
       integer j;
       begin
-        $display("\n[TC7] Random Writes Only");
+        $display("\n--- Random Writes Only ---");
         for (j = 0; j < 5; j = j + 1) begin
           wr_enb  = 1;
           wr_data = $random & 8'hFF; // keep it in 8-bit range
@@ -56,7 +54,7 @@ module stimulus(
     task tc_random_reads_only;
       integer j;
       begin
-        $display("\n[TC8] Random Reads Only");
+        $display("\n--- Random Reads Only ---");
         for (j = 0; j < 7; j = j + 1) begin
           rd_enb = 1;
           @(posedge clk); #10; show();
@@ -66,22 +64,21 @@ module stimulus(
     endtask
 
 
-    task tc_random_burst_write_read;
-      integer burst, j;
+    task tc_random_n_write_read;
+      integer n, j;
       begin
-        burst = ($random & 7) + 1; // always 1–8
-        $display("\n[TC9] Random Burst Writes then Reads (burst=%0d)", burst);
+        n = ($random & 7) + 1; // always 1–8
+        $display("\n--- Random n Writes then Reads (n=%0d) ---", n);
 
-        // Burst write
-        for (j = 0; j < burst; j = j + 1) begin
+        for (j = 0; j < n; j = j + 1) begin
           wr_enb  = 1; 
           wr_data = $random & 8'hFF;
           @(posedge clk); #1; show();
         end
         wr_enb = 0;
 
-        // Burst read
-        for (j = 0; j < burst; j = j + 1) begin
+
+        for (j = 0; j < n; j = j + 1) begin
           rd_enb = 1; @(posedge clk); #1; show();
         end
         rd_enb = 0;
@@ -92,16 +89,15 @@ module stimulus(
     task tc_random_full_drain_cycles;
       integer j;
       begin
-        $display("\n[TC10] Random Full/Drain Cycle");
+        $display("\n--- Random Full/Drain Cycle ---");
 
-        // Fill with 8 random values
         for (j = 0; j < 8; j = j + 1) begin
           wr_enb  = 1; wr_data = $random & 8'hFF;
           @(posedge clk); #1; show();
         end
         wr_enb = 0;
 
-        // Drain them
+
         for (j = 0; j < 8; j = j + 1) begin
           rd_enb = 1;
           @(posedge clk); #1; show();
@@ -113,13 +109,12 @@ module stimulus(
 
 
     initial begin
-      // Initialize signals
       rst_n   = 0;
       wr_enb  = 0;
       rd_enb  = 0;
       wr_data = 0;
 
-      // Apply reset
+
       $display("Applying reset before tests...");
       repeat(2) @(posedge clk);
       rst_n = 1;
@@ -130,7 +125,7 @@ module stimulus(
       tc_random_write_read();
       tc_random_writes_only();
       tc_random_reads_only();
-      tc_random_burst_write_read();
+      tc_random_n_write_read();
       tc_random_full_drain_cycles();
 
       $display("\n=== FIFO RANDOM TESTCASES END ===");
