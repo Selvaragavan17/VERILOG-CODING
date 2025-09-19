@@ -1,76 +1,115 @@
 `timescale 1ns/1ps
-// bfm.v
+// Simple beginner-friendly BFM for the provided FIFO
+// - Pure Verilog
+// - Call tasks from testbench via hierarchical name bfm_inst.task_name(...)
+
 module bfm (
-    input           clk,
-    output reg      rst_n,
-    output reg [7:0] wr_data,
-    output reg      wr_enb,
-    output reg      rd_enb,
-    input  [7:0]    rd_data,
-    input           fifo_full,
-    input           fifo_empty,
-    input           fifo_almost_full,
-    input           fifo_almost_empty,
-    input           fifo_overrun,
-    input           fifo_underrun
+    input            clk,             // system clock (shared with FIFO)
+    output reg       rst_n,           // drives FIFO reset (active low)
+    output reg [7:0] wr_data,         // drives FIFO write data
+    output reg       wr_enb,          // drives FIFO write enable
+    output reg       rd_enb,          // drives FIFO read enable
+    input  [7:0]     rd_data,         // sampled read data from FIFO
+    input            fifo_full,
+    input            fifo_empty,
+    input            fifo_almost_full,
+    input            fifo_almost_empty,
+    input            fifo_overrun,
+    input            fifo_underrun
 );
 
-    initial begin
-        rst_n   = 1;
-        wr_enb  = 0;
-        rd_enb  = 0;
-        wr_data = 8'h00;
-    end
-  
+  // -------------------------
+  // Helper display
+  // -------------------------
   task show;
     begin
-      $display("%0t | wr_enb=%0b wr_data=%0h | rd_enb=%0b rd_data=%0h | full=%0b empty=%0b over=%0b under=%0b fifo_almost_full=%0d  fifo_almost_empty=%0d",
-               $time, wr_enb, wr_data, rd_enb, rd_data, fifo_full, fifo_empty, fifo_overrun, fifo_underrun,fifo_almost_full,fifo_almost_empty);
+      $display("[%0t] wr_enb=%0b wr_data=%0h | rd_enb=%0b rd_data=%0h | full=%0b empty=%0b | almost_full=%0d almost_empty=%0d",
+               $time, wr_enb, wr_data, rd_enb, rd_data, fifo_full, fifo_empty, fifo_almost_full, fifo_almost_empty);
     end
   endtask
 
-    // reset
-    task reset_bfm;
-      input integer cycles;
-      integer i;
-      begin
-        $display("[%0t][BFM] Reset asserted", $time);
-        rst_n = 0;
-        for (i = 0; i < cycles; i = i + 1) @(posedge clk);
-        rst_n = 1;
-        @(posedge clk);
-        $display("[%0t][BFM] Reset de-asserted", $time);
-        show();
-      end
-    endtask
+  // -------------------------
+  // 1. Reset task
+  // -------------------------
+  task do_reset;
+    begin
+      $display("\n[BFM] Reset sequence");
+      rst_n = 0;
+      wr_enb = 0;
+      rd_enb = 0;
+      wr_data = 0;
+      repeat (2) @(posedge clk);
+      rst_n = 1;
+      @(posedge clk); #1; show();
+    end
+  endtask
 
-    // write one byte
-    task write_byte;
-      input [7:0] data;
-      begin
-        @(posedge clk);
-        wr_data = data;
-        wr_enb  = 1;
-        $display("[%0t][BFM] Wrote %0h", $time, data);
-        show();
-        @(posedge clk);
-        wr_enb  = 0;
-      end
-    endtask
+  // -------------------------
+  // 2. Single Write
+  // -------------------------
+  task do_write(input [7:0] data);
+    begin
+      $display("\n[BFM] Writing data = %0h", data);
+      wr_enb = 1; wr_data = data;
+      @(posedge clk); #1; show();
+      wr_enb = 0;
+      @(posedge clk); #1; show();
+    end
+  endtask
 
-    // read one byte
-    task read_byte; 
-      output [7:0] data; 
-      begin @(posedge clk); 
-        rd_enb = 1; 
-        @(posedge clk); 
-        data = rd_data; 
-        rd_enb = 0; 
-        $display("[%0t][BFM] Read %0h", $time, data); 
-      end endtask
-  -----------------------------------------------------------
+  // -------------------------
+  // 3. Single Read
+  // -------------------------
+  task do_read(output [7:0] data);
+    begin
+      $display("\n[BFM] Reading data");
+      rd_enb = 1;
+      @(posedge clk); #1; show();
+      data = rd_data;
+      rd_enb = 0;
+      @(posedge clk); #1; show();
+      $display("[BFM] Got back = %0h", data);
+    end
+  endtask
+
+  // -------------------------
+  // 4. Fill FIFO completely
+  // -------------------------
+  task do_full_write;
+    integer i;
+    begin
+      $display("\n[BFM] Filling FIFO completely");
+      for (i = 0; i < 8; i = i + 1) begin
+        wr_enb = 1; wr_data = i + 8'h10;
+        @(posedge clk); #1; show();
+      end
+      wr_enb = 0;
+      @(posedge clk); #1; show();
+    end
+  endtask
+
+  // -------------------------
+  // 5. Read FIFO completely
+  // -------------------------
+  task do_full_read;
+    integer i;
+    begin
+      $display("\n[BFM] Draining FIFO completely");
+      for (i = 0; i < 8; i = i + 1) begin
+        rd_enb = 1;
+        @(posedge clk); #1; show();
+      end
+      rd_enb = 0;
+      @(posedge clk); #1; show();
+    end
+  endtask
+
+endmodule
+-----------------------------------------------------------
   `timescale 1ns/1ps
 `include"bfm.sv"
+
+
 module tb_top;
 
   reg clk;
@@ -115,31 +154,19 @@ module tb_top;
     .fifo_overrun(fifo_overrun),
     .fifo_underrun(fifo_underrun)
   );
+initial begin
+  reg [7:0] d;
 
-  // Test sequence directly here
-  initial begin
-    integer i;
-    reg [7:0] d;
+  bfm_inst.do_reset();
+  bfm_inst.do_write(8'hA5);
+  bfm_inst.do_read(d);
+  bfm_inst.do_full_write();
+  bfm_inst.do_full_read();
 
-    // Apply reset
-    bfm_inst.reset_bfm(3);
+  #20 $finish;
+end
 
-    // Write some values
-    for (i = 0; i < 4; i = i + 1) begin
-      bfm_inst.write_byte(i);
-    end
 
-    // Read them back
-    for (i = 0; i < 4; i = i + 1) begin
-      bfm_inst.read_byte(d);
-      $display("[TB] Got back = %0h", d);
-      bfm_inst.show;
-    end
-
-    $display("[TB] Test finished!");
-    #20 $finish;
-  end
 
 endmodule
 
-endmodule
