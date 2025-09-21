@@ -12,15 +12,19 @@ module bfm (
     input fifo_almost_full,
     input fifo_almost_empty,
     input fifo_overrun,
-    input fifo_underrun);
+    input fifo_underrun
+);
 
+  // Display helper
   task show;
     begin
-      $display("[BFM]---[%0t] wr_enb=%0b wr_data=%0h | rd_enb=%0b rd_data=%0h | full=%0b empty=%0b | almost_full=%0b almost_empty=%0b overrun=%0b underrun=%0b",
-               $time, wr_enb, wr_data, rd_enb, rd_data,fifo_full, fifo_empty, fifo_almost_full, fifo_almost_empty,fifo_overrun, fifo_underrun);
+      $display("[BFM]---[%0t] rst_n=%0b wr_enb=%0b wr_data=%0h | rd_enb=%0b rd_data=%0h | full=%0b empty=%0b | almost_full=%0b almost_empty=%0b overrun=%0b underrun=%0b",$time, rst_n, wr_enb, wr_data, rd_enb, rd_data,
+fifo_full, fifo_empty, fifo_almost_full, fifo_almost_empty,
+fifo_overrun, fifo_underrun);
     end
   endtask
 
+  // Reset sequence
   task do_reset;
     begin
       $display("\n[BFM] Reset sequence");
@@ -31,15 +35,17 @@ module bfm (
     end
   endtask
 
+  // Simple write
   task do_write(input [7:0] data);
     begin
       wr_enb=1; wr_data=data;
       @(posedge clk); show;
       wr_enb=0;
-      @(posedge clk); show;
+      @(posedge clk); 
     end
   endtask
 
+  // Simple read
   task do_read(output [7:0] data);
     begin
       rd_enb=1;
@@ -49,8 +55,8 @@ module bfm (
       @(posedge clk); show;
     end
   endtask
-  
-  task corner_write_when_full;
+
+ task corner_write_when_full;
     integer i;
     begin
       $display("\n[BFM]---Corner Case 1 – Write when FIFO is Full");
@@ -63,10 +69,10 @@ module bfm (
 
   task corner_read_when_empty;
     reg [7:0] tmp;
+    integer i;
     begin
       $display("\n[BFM]---Corner Case 2 – Read when FIFO is Empty");
-      do_reset(); 
-      do_read(tmp); 
+      do_reset();
     end
   endtask
 
@@ -105,6 +111,9 @@ module bfm (
       @(posedge clk); show;
     end
   endtask
+
+endmodule
+
 
 endmodule
 
