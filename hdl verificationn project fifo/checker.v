@@ -1,4 +1,3 @@
-
 `timescale 1ns/1ps
 
 module fifo_checker (
@@ -11,71 +10,81 @@ module fifo_checker (
     input fifo_full,
     input fifo_empty,
     input fifo_overrun,
-    input fifo_underrun
+    input fifo_underrun,
+  	input fifo_almost_empty,
+  	input fifo_almost_full
 );
 
     reg [7:0] ref_mem [0:7];
-    reg [3:0] wr_ptr, rd_ptr, count;
+    reg [3:0] ref_wr_ptr, ref_rd_ptr, ref_count;
 
-
-    reg rd_pending;
     reg [7:0] expected_data;
+    reg [3:0] next_count;
 
  
-    always @(negedge rst_n) begin
-        wr_ptr      <= 0;
-        rd_ptr      <= 0;
-        count       <= 0;
-        rd_pending  <= 0;
-        expected_data <= 0;
+    always @(posedge clk or negedge rst_n) begin
+  if (!rst_n) begin
+    ref_wr_ptr <= 0;
+    ref_rd_ptr <= 0;
+    ref_count  <= 0;
+    expected_data <= 0;
+    $display("[%0t][CHECKER] RESET applied",$time);
+  end else begin
+    // Start with last known good value
+    next_count = ref_count;
+
+    // WRITE
+    if (wr_enb) begin
+      if (!fifo_full) begin
+        ref_mem[ref_wr_ptr] <= wr_data;
+        ref_wr_ptr <= ref_wr_ptr + 1;
+        next_count = next_count + 1;   // blocking ok inside always_ff
+        $display("[%0t][CHECKER] CAPTURE WRITE: %0h at addr=%0d (exp_count=%0d)",
+                  $time, wr_data, ref_wr_ptr, next_count);
+      end else begin
+        if (fifo_overrun)
+          $display("[%0t][CHECKER] PASS : Write blocked (FIFO FULL + OVERRUN)",$time);
+        else
+          $display("[%0t][CHECKER] FAIL : Write attempted but FIFO_FULL not flagged",$time);
+      end
     end
 
-
-    always @(posedge clk) begin
-        if (rst_n) begin
-            if (wr_enb && (count < 8)) begin
-                ref_mem[wr_ptr[2:0]] <= wr_data;
-                wr_ptr <= wr_ptr + 1;
-                count  <= count + 1;
-              $display("[CHECKER][%0t]---CAPTURE WRITE: %0h at addr=%0d (count---%0d)",
-                          $time, wr_data, wr_ptr[2:0], count+1);
-            end
-
-            if (rd_enb && (count > 0)) begin
-                expected_data <= ref_mem[rd_ptr[2:0]];
-                rd_ptr    <= rd_ptr + 1;
-                count     <= count - 1;
-                rd_pending <= 1;
-            end else begin
-                rd_pending <= 0;
-            end
-        end
+    // READ
+    if (rd_enb) begin
+      if (!fifo_empty) begin
+        expected_data = ref_mem[ref_rd_ptr];
+        if (rd_data === expected_data)
+          $display("[%0t][CHECKER] PASS : READ data=%0h",$time, rd_data);
+        else
+          $display("[%0t][CHECKER] FAIL : READ expected=%0h got=%0h",
+                    $time, expected_data, rd_data);
+        ref_rd_ptr <= ref_rd_ptr + 1;
+        next_count = next_count - 1;
+      end else begin
+        if (fifo_underrun)
+          $display("[%0t][CHECKER] PASS : Read blocked (FIFO EMPTY + UNDERRUN)",$time);
+        else
+          $display("[%0t][CHECKER] FAIL : Read attempted but FIFO_EMPTY not flagged",$time);
+      end
     end
 
+    // Update reference count
+    ref_count <= next_count;
 
-    always @(posedge clk) begin
-        if (rst_n && rd_pending) begin
-            if (rd_data !== expected_data) begin
-              $display("[CHECKER][%0t]---ERROR: Data mismatch! Expected=%0h Got=%0h",
-                          $time, expected_data, rd_data);
-            end else begin
-              $display("[CHECKER][%0t]---PASS: Data matched (%0h)",
-                          $time, rd_data);
-            end
-        end
-    end
+    // Flag consistency checks
+    if (fifo_full !== (ref_count == 8))
+      $display("[%0t][CHECKER] FAIL : fifo_full mismatch (exp=%0b got=%0b)",
+                $time, (ref_count==8), fifo_full);
 
-    always @(posedge clk) begin
-        if (rst_n) begin
-            if (fifo_full && (count != 8))
-              $display("[CHECKER][%0t]---ERROR: fifo_full asserted wrongly! golden_count=%0d", $time, count);
-            if (fifo_empty && (count != 0))
-              $display("[CHECKER][%0t]---ERROR: fifo_empty asserted wrongly! golden_count=%0d", $time, count);
-            if (fifo_overrun && (count != 8))
-              $display("[CHECKER][%0t]---ERROR: fifo_overrun flagged wrongly! golden_count=%0d", $time, count);
-            if (fifo_underrun && (count != 0))
-              $display("[CHECKER][%0t]---ERROR: fifo_underrun flagged wrongly! golden_count=%0d", $time, count);
-        end
-    end
+    if (fifo_empty !== (ref_count == 0))
+      $display("[%0t][CHECKER] FAIL : fifo_empty mismatch (exp=%0b got=%0b)",
+                $time, (ref_count==0), fifo_empty);
 
+    if (fifo_almost_full !== (ref_count >= 7))
+      $display("[%0t][CHECKER] FAIL : fifo_almost_full mismatch",$time);
+
+    if (fifo_almost_empty !== (ref_count <= 1))
+      $display("[%0t][CHECKER] FAIL : fifo_almost_empty mismatch",$time);
+  end
+end
 endmodule
