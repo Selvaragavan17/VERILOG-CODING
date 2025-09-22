@@ -347,23 +347,23 @@ module fifo_checker (
     output fail_pulse     // 1-cycle pulse on FAIL event
 );
 
-    // --- Reference FIFO memory and pointers ---
+
     reg [7:0] ref_mem [0:7];
     reg [3:0] wr_ptr, rd_ptr, count;
 
-    // --- Delayed read check ---
+
     reg [7:0] expected_data;
     reg rd_pending;
 
-    // pulse regs (internal)
+
     reg pass_pulse_r;
     reg fail_pulse_r;
 
-    // optional internal counters (kept for debug/reporting)
+
     integer pass_count;
     integer fail_count;
 
-    // connect outputs
+
     assign pass_pulse = pass_pulse_r;
     assign fail_pulse = fail_pulse_r;
 
@@ -380,11 +380,11 @@ module fifo_checker (
             fail_count <= 0;
             $display("[%0t][CHECKER] RESET applied", $time);
         end else begin
-            // clear pulses at start of cycle (single-cycle pulses)
+            
             pass_pulse_r <= 0;
             fail_pulse_r <= 0;
 
-            // ----------------- WRITE -----------------
+    
             if (wr_enb) begin
                 if (!fifo_full) begin
                     ref_mem[wr_ptr] <= wr_data;
@@ -405,7 +405,7 @@ module fifo_checker (
                 end
             end
 
-            // -------------- CHECK PREVIOUS READ --------------
+     
             if (rd_pending) begin
                 if (rd_data === expected_data) begin
                     $display("[%0t][CHECKER] PASS : READ data=%0h", $time, rd_data);
@@ -419,7 +419,7 @@ module fifo_checker (
                 rd_pending <= 0; // clear after checking
             end
 
-            // ----------------- SCHEDULE NEW READ -----------------
+     
             if (rd_enb) begin
                 if (!fifo_empty) begin
                     expected_data <= ref_mem[rd_ptr];
@@ -439,7 +439,7 @@ module fifo_checker (
                 end
             end
 
-            // ----------------- FLAG CHECKS -----------------
+
             if (fifo_full !== (count == 8)) begin
                 $display("[%0t][CHECKER] FAIL : fifo_full mismatch (exp=%0b got=%0b)", $time, (count==8), fifo_full);
                 fail_pulse_r <= 1;
