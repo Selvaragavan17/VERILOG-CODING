@@ -30,10 +30,10 @@ module fifo_checker (
     expected_data <= 0;
     $display("[%0t][CHECKER] RESET applied",$time);
   end else begin
-    // Start with last known good value
+
     next_count = ref_count;
 
-    // WRITE
+ 
     if (wr_enb) begin
       if (!fifo_full) begin
         ref_mem[ref_wr_ptr] <= wr_data;
@@ -49,7 +49,6 @@ module fifo_checker (
       end
     end
 
-    // READ
     if (rd_enb) begin
       if (!fifo_empty) begin
         expected_data = ref_mem[ref_rd_ptr];
@@ -68,10 +67,10 @@ module fifo_checker (
       end
     end
 
-    // Update reference count
+
     ref_count <= next_count;
 
-    // Flag consistency checks
+  
     if (fifo_full !== (ref_count == 8))
       $display("[%0t][CHECKER] FAIL : fifo_full mismatch (exp=%0b got=%0b)",
                 $time, (ref_count==8), fifo_full);
