@@ -15,7 +15,7 @@ module bfm (
     input fifo_underrun
 );
 
-
+  // Display helper
   task show;
     begin
       $display("[BFM]---[%0t] rst_n=%0b wr_enb=%0b wr_data=%0h | rd_enb=%0b rd_data=%0h | full=%0b empty=%0b | almost_full=%0b almost_empty=%0b overrun=%0b underrun=%0b",$time, rst_n, wr_enb, wr_data, rd_enb, rd_data,
@@ -24,9 +24,10 @@ fifo_overrun, fifo_underrun);
     end
   endtask
 
+  // Reset sequence
   task do_reset;
     begin
-      $display("\n[BFM] Reset sequence");
+      $display("\n[BFM]--- Reset sequence");
       rst_n=0; wr_enb=0; rd_enb=0; wr_data=0;
       @(posedge clk); show;
       rst_n=1;
@@ -34,28 +35,30 @@ fifo_overrun, fifo_underrun);
     end
   endtask
 
-
+  // Simple write
   task do_write(input [7:0] data);
     begin
+//       $display("\n[BFM]---Directed Case 2 – Simple Write");
       wr_enb=1; wr_data=data;
-      @(posedge clk); show;
+      @(posedge clk); #1; show;
       wr_enb=0;
-      @(posedge clk); show;
+      @(posedge clk); 
     end
   endtask
 
-
+  // Simple read
   task do_read(output [7:0] data);
     begin
+//       $display("\n[BFM]---Directed Case 3 – Simple Read");
       rd_enb=1;
-      @(posedge clk); show;
+      @(posedge clk); #1;show;
       data=rd_data;
       rd_enb=0;
-      @(posedge clk); show;
+      @(posedge clk); 
     end
   endtask
 
-  // -------------------------------
+   // -------------------------------
   // RANDOM TESTCASES
   // -------------------------------
   task random_write_read_mix;
