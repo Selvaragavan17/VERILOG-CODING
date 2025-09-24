@@ -1,5 +1,4 @@
 // Code your design here
-// Code your design here
 module fifo #(
     parameter DATA_WIDTH = 8,
     parameter DEPTH      = 8,
@@ -81,8 +80,11 @@ module fifo #(
         end
     end
 endmodule
------------------------------------------------------------------------------
 
+
+-----------------------------------------------------------------------------
+// Code your testbench here
+// or browse Examples
  `timescale 1ns/1ps
 `include"bfm.sv"
 `include"monitor.sv"
@@ -186,7 +188,10 @@ initial begin
   bfm_inst.do_read(d);
   bfm_inst.do_full_write;
   bfm_inst.do_full_read;
-  logger_inst.close_log;
+  bfm_inst.do_overflow_write;
+  bfm_inst.do_underflow_read;
+  bfm_inst.do_simul_rdwr;
+  logger_inst.report_status;
   $finish;
 end
 
@@ -211,7 +216,7 @@ module bfm (
     input fifo_underrun
 );
 
-
+  // Display helper
   task show;
     begin
       $display("[BFM]---[%0t] rst_n=%0b wr_enb=%0b wr_data=%0h | rd_enb=%0b rd_data=%0h | full=%0b empty=%0b | almost_full=%0b almost_empty=%0b overrun=%0b underrun=%0b",$time, rst_n, wr_enb, wr_data, rd_enb, rd_data,
@@ -220,10 +225,10 @@ fifo_overrun, fifo_underrun);
     end
   endtask
 
-
+  // Reset sequence
   task do_reset;
     begin
-      $display("\n[BFM]--- Reset sequence");
+      $display("\n[BFM]---Directed Case 1 - Reset sequence");
       rst_n=0; wr_enb=0; rd_enb=0; wr_data=0;
       @(posedge clk); show;
       rst_n=1;
@@ -231,7 +236,7 @@ fifo_overrun, fifo_underrun);
     end
   endtask
 
- 
+  // Simple write
   task do_write(input [7:0] data);
     begin
       $display("\n[BFM]---Directed Case 2 – Simple Write");
@@ -242,7 +247,7 @@ fifo_overrun, fifo_underrun);
     end
   endtask
 
-
+  // Simple read
   task do_read(output [7:0] data);
     begin
        $display("\n[BFM]---Directed Case 3 – Simple Read");
@@ -253,6 +258,7 @@ fifo_overrun, fifo_underrun);
       @(posedge clk); 
     end
   endtask
+  
   task do_full_write;
     integer i;
     begin
@@ -278,9 +284,53 @@ fifo_overrun, fifo_underrun);
       @(posedge clk); 
     end
   endtask
+  
+          task do_overflow_write;
+    begin
+      $display("\n[BFM]--- Directed Case 6 - Write when FIFO is full (Expect Overrun)");
+      // First fill the FIFO
+      do_full_write();
+      // Now attempt one extra write
+      wr_enb=1; wr_data=8'hFF;
+      @(posedge clk); #1; show;
+      wr_enb=0;
+      @(posedge clk);
+    end
+  endtask
+
+
+  
+  
+    task do_underflow_read;
+    begin
+      $display("\n[BFM]--- Directed Case 7 - Read when FIFO is empty (Expect Underrun)");
+      do_reset();
+      // Try read immediately when FIFO is empty
+      rd_enb=1;
+      @(posedge clk); #1; show;
+      rd_enb=0; @(posedge clk);
+    end
+  endtask
+  
+    task do_simul_rdwr;
+    begin
+      $display("\n[BFM]--- Directed Case 8 - Simultaneous Read & Write");
+      do_reset();
+      // Write one element first
+      wr_enb=1; wr_data=8'hAA;
+      @(posedge clk); #1; show;
+      wr_enb=0; @(posedge clk);
+
+      // Now do simultaneous R/W
+      wr_enb=1; wr_data=8'hBB; rd_enb=1;
+      @(posedge clk); #1; show;
+      wr_enb=0; rd_enb=0;
+      @(posedge clk);
+    end
+  endtask
+
   endmodule
 -------------------------------------------------------------------------------
-// monitor.v
 `timescale 1ns/1ps
 
 module monitor (
@@ -298,7 +348,7 @@ module monitor (
     input fifo_underrun
 );
 
-  always @(negedge clk or negedge rst_n) begin
+  always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
             $display("[%0t][MONITOR] RESET active", $time);
         end else begin
@@ -347,23 +397,19 @@ module fifo_checker (
     output fail_pulse     // 1-cycle pulse on FAIL event
 );
 
-
+    // --- Reference FIFO memory and pointers ---
     reg [7:0] ref_mem [0:7];
     reg [3:0] wr_ptr, rd_ptr, count;
 
-
+    // --- Delayed read check ---
     reg [7:0] expected_data;
     reg rd_pending;
 
-
+    // pulse regs (internal)
     reg pass_pulse_r;
     reg fail_pulse_r;
 
-
-    integer pass_count;
-    integer fail_count;
-
-
+    // connect outputs
     assign pass_pulse = pass_pulse_r;
     assign fail_pulse = fail_pulse_r;
 
@@ -376,15 +422,14 @@ module fifo_checker (
             expected_data <= 0;
             pass_pulse_r <= 0;
             fail_pulse_r <= 0;
-            pass_count <= 0;
-            fail_count <= 0;
+          
             $display("[%0t][CHECKER] RESET applied", $time);
         end else begin
-            
+            // clear pulses at start of cycle (single-cycle pulses)
             pass_pulse_r <= 0;
             fail_pulse_r <= 0;
 
-    
+            // ----------------- WRITE -----------------
             if (wr_enb) begin
                 if (!fifo_full) begin
                     ref_mem[wr_ptr] <= wr_data;
@@ -396,30 +441,30 @@ module fifo_checker (
                     if (fifo_overrun) begin
                         $display("[%0t][CHECKER] PASS : Write blocked (FIFO FULL + OVERRUN)", $time);
                         pass_pulse_r <= 1;
-                        pass_count = pass_count + 1;
+                       
                     end else begin
                         $display("[%0t][CHECKER] FAIL : Write attempted but FIFO_FULL not flagged", $time);
                         fail_pulse_r <= 1;
-                        fail_count = fail_count + 1;
+                        
                     end
                 end
             end
 
-     
+            // -------------- CHECK PREVIOUS READ --------------
             if (rd_pending) begin
                 if (rd_data === expected_data) begin
                     $display("[%0t][CHECKER] PASS : READ data=%0h", $time, rd_data);
                     pass_pulse_r <= 1;
-                    pass_count = pass_count + 1;
+                    
                 end else begin
                     $display("[%0t][CHECKER] FAIL : READ expected=%0h got=%0h", $time, expected_data, rd_data);
                     fail_pulse_r <= 1;
-                    fail_count = fail_count + 1;
+                    
                 end
                 rd_pending <= 0; // clear after checking
             end
 
-     
+            // ----------------- SCHEDULE NEW READ -----------------
             if (rd_enb) begin
                 if (!fifo_empty) begin
                     expected_data <= ref_mem[rd_ptr];
@@ -430,38 +475,38 @@ module fifo_checker (
                     if (fifo_underrun) begin
                         $display("[%0t][CHECKER] PASS : Read blocked (FIFO EMPTY + UNDERRUN)", $time);
                         pass_pulse_r <= 1;
-                        pass_count = pass_count + 1;
+                        
                     end else begin
                         $display("[%0t][CHECKER] FAIL : Read attempted but FIFO_EMPTY not flagged", $time);
                         fail_pulse_r <= 1;
-                        fail_count = fail_count + 1;
+                        
                     end
                 end
             end
 
-
+            // ----------------- FLAG CHECKS -----------------
             if (fifo_full !== (count == 8)) begin
                 $display("[%0t][CHECKER] FAIL : fifo_full mismatch (exp=%0b got=%0b)", $time, (count==8), fifo_full);
                 fail_pulse_r <= 1;
-                fail_count = fail_count + 1;
+                
             end
 
             if (fifo_empty !== (count == 0)) begin
                 $display("[%0t][CHECKER] FAIL : fifo_empty mismatch (exp=%0b got=%0b)", $time, (count==0), fifo_empty);
                 fail_pulse_r <= 1;
-                fail_count = fail_count + 1;
+                
             end
 
             if (fifo_almost_full !== (count >= 7)) begin
                 $display("[%0t][CHECKER] FAIL : fifo_almost_full mismatch (count=%0d)", $time, count);
                 fail_pulse_r <= 1;
-                fail_count = fail_count + 1;
+                
             end
 
             if (fifo_almost_empty !== (count <= 1)) begin
                 $display("[%0t][CHECKER] FAIL : fifo_almost_empty mismatch (count=%0d)", $time, count);
                 fail_pulse_r <= 1;
-                fail_count = fail_count + 1;
+                
             end
         end
     end
@@ -498,19 +543,18 @@ module api_logger (
    
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
-            pass_count <= 0;
-            fail_count <= 0;
+            
         end else begin
             if (pass_pulse) begin
-                pass_count <= pass_count + 1;
+                pass_count = pass_count + 1;
              
                 $display("[%0t][API_LOG] PASS event: PASS=%0d FAIL=%0d", $time, pass_count+0, fail_count+0);
               
                 $fwrite(log_fd, "%0t\tPASS=%0d\tFAIL=%0d\n", $time, pass_count, fail_count);
             end
             if (fail_pulse) begin
-                fail_count <= fail_count + 1;
-              
+               fail_count = fail_count + 1;
+             
                 $display("[%0t][API_LOG] FAIL event:  PASS=%0d FAIL=%0d", $time, pass_count+0, fail_count+0);
                 
                 $fwrite(log_fd, "%0t\tPASS=%0d\tFAIL=%0d\n", $time, pass_count, fail_count);
@@ -538,21 +582,14 @@ module api_logger (
             $fwrite(log_fd, "RESULT = PASS\n");
         else
             $fwrite(log_fd, "RESULT = FAIL\n");
-    end
-    endtask
-
-
-    task close_log;
-    begin
       
-        report_status();
-        $fwrite(log_fd, "---- Simulation Complete ----\n");
-        $fwrite(log_fd, "Total PASS = %0d\n", pass_count);
-        $fwrite(log_fd, "Total FAIL = %0d\n", fail_count);
-        $fclose(log_fd);
+      $fclose(log_fd);
         $display("[API_LOG] Log file closed.");
     end
     endtask
+
+
+  
 
 endmodule
 
